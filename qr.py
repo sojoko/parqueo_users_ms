@@ -6,14 +6,10 @@ import base64
 def qr_generator(date_request):
     
     input = date_request
-
     qr = qrcode.QRCode(version=1, box_size=15, border=2)
-
     qr.add_data(input)
     qr.make(fit=True)
-
     img = qr.make_image(fill='black', back_color='white')
-
     img_bytes = BytesIO()
     img.save(img_bytes, format='PNG')
     img_bytes.seek(0)

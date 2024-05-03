@@ -11,6 +11,7 @@ class Aprendices(BaseModel):
     photo: Optional[str] = Field(None, description="La url de la imagen del aprendiz")
     finish_date: str = Field(..., description="Fecha de finalización del aprendizaje")
     state_id: Optional[int] = Field(None, description="Estado del aprendiz")
+    
 
     class Config:
         schema_extra = {
@@ -24,3 +25,8 @@ class Aprendices(BaseModel):
                  "finish_date": "2021-12-31"
             }
         }
+
+
+class ChangeStatusRequest(BaseModel):
+    document: int
+    state_id: int

@@ -9,6 +9,7 @@ from routers.users_route import user_router
 from routers.vigilante_route import vigilante_router
 from routers.admins_route import admins_router
 from routers.vehicles_route import vehicle_router
+from routers.upleader_s3 import upload_to_s3_route
 
 
 app = FastAPI()
@@ -27,6 +28,7 @@ app.include_router(user_router)
 app.include_router(vigilante_router)
 app.include_router(admins_router)
 app.include_router(vehicle_router)
+app.include_router(upload_to_s3_route)
 
 
 

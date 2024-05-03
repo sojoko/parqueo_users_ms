@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -6,6 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from models.vigilantes import Vigilantes as VigilanteModel
 from schemas.vigilantes import Vigilantes
 from models.aprendices import EstadoAprendiz
+    
 
 
 
@@ -28,6 +29,25 @@ async def create_vigilante(vigilantes: Vigilantes):
         db.add(new_vigitalente)
         db.commit()
         return {"message": "El usuario vigilante fue regitrado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+
+
+@vigilante_router.get("/api/v1/vigilantes-all", tags=['Vigilantes'])
+async def get_all_vigilant(page: int = Query(1, ge=1), per_page: int = Query(5, ge=1)):
+    try:
+        db = Session()
+        try:
+            skip = (page - 1) * per_page
+            vigilants = db.query(VigilanteModel).offset(skip).limit(per_page).all()
+            vigilantes_with_roll = []
+            for vigilante in vigilants:
+                user_dict = vigilante.__dict__
+                user_dict['roll'] = "vigilante"
+                vigilantes_with_roll.append(user_dict)
+            return JSONResponse(status_code=200, content=jsonable_encoder(vigilantes_with_roll))
+        finally:
+            db.close()  # Cierra la sesión de SQLAlchemy después de usarla
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
