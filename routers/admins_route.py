@@ -24,14 +24,11 @@ async def create_admin(admins : Admins):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El usuario ya existe",
             )
-    try:      
-     
-        
+    try:       
         new_admin = AdminModel(
             name=admins.name,
             last_name=admins.last_name,
-            document=admins.document          
-                          
+            document=admins.document                             
         )
         db.add(new_admin)
         db.commit()
@@ -40,3 +37,11 @@ async def create_admin(admins : Admins):
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
 
+@admins_router.get("/api/v1/admins-all", tags=['admins'])
+async def get_all_admins():
+    try:      
+        db = Session()  
+        admins = db.query(AdminModel).all()
+        return JSONResponse(status_code=200, content=jsonable_encoder(admins))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")

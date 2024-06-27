@@ -14,8 +14,7 @@ qr_router = APIRouter()
 @qr_router.post("/api/v1/qr", tags=['QR'])
 def create_qr(qr: QR, document: int):
     db = Session()
-    document = int(document)   
-    
+    document = int(document) 
     try_to_exist_qr = db.query(QRModel).filter(QRModel.user_document == document).first()
     
     if try_to_exist_qr:
@@ -28,7 +27,6 @@ def create_qr(qr: QR, document: int):
 
         if diferencia < time_limit:
             return JSONResponse(status_code=200, content=jsonable_encoder(last_qr_image_decode))
-    
     
     date_request = f'http://localhost:3000/aprendiz-info?document={document}'
     qr_binary = b64decode(qr_generator(date_request=date_request))
