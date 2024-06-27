@@ -3,6 +3,9 @@ from models.users import User as UserModel
 from models.users import UserStatus, UserRoll
 from schemas.usersLogin import User
 from schemas.usersRegistry import UserRegistry
+from schemas.vigilantes import Vigilantes
+from schemas.aprendices import Aprendices
+from schemas.admins import Admins
 from fastapi.encoders import jsonable_encoder
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -50,6 +53,8 @@ def login(users: User):
         name = db.query(AdminModel).filter(AdminModel.document == users.document).first().name
     elif roll == 2:
         name = db.query(AprendizModel).filter(AprendizModel.document == users.document).first().name
+    elif roll == 3:
+        name = db.query(VigilanteModel).filter(VigilanteModel.document == users.document).first().name
     
 
     user_for_token = {"document": user.document, "password": user.password}
@@ -111,3 +116,25 @@ async def get_all_persons(page: int = Query(1, ge=1), per_page: int = Query(5, g
             db.close()  
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    
+    
+    
+@user_router.get("/api/v1/edit_user_by_person", tags=['Users'])
+async def edit_user_by_person(document: int, roll : int):
+    try:
+        db = Session()
+        try:
+            if roll == 1:
+                user = db.query(AdminModel).filter(AdminModel.document == document).first()
+            elif roll == 2:
+                user = db.query(AprendizModel).filter(AprendizModel.document == document).first()
+            elif roll == 3:
+                user = db.query(VigilanteModel).filter(VigilanteModel.document == document).first()
+            
+
+            return JSONResponse(status_code=200, content=jsonable_encoder("Usuario actualizado exitosamente"))
+        finally:
+            db.close()  
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+

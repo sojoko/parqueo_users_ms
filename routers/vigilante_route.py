@@ -31,6 +31,27 @@ async def create_vigilante(vigilantes: Vigilantes):
         return {"message": "El usuario vigilante fue regitrado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    
+@vigilante_router.put("/api/v1/vigilantes-update/{document}", tags=['Vigilantes'])
+async def update_vigilante(document: int, vigilantes: Vigilantes):
+    db = Session()
+    try:
+        # Buscar el vigilante por el documento
+        vigilante = db.query(VigilanteModel).filter(VigilanteModel.document == document).first()
+        
+        if not vigilante:
+            raise HTTPException(status_code=404, detail="Vigilante no encontrado")
+        
+        # Actualizar los datos del vigilante
+        vigilante.name = vigilantes.name
+        vigilante.last_name = vigilantes.last_name
+        vigilante.document = int(vigilantes.document)
+        
+        db.commit()
+        
+        return {"message": "El usuario vigilante fue actualizado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
 
 @vigilante_router.get("/api/v1/vigilantes-all", tags=['Vigilantes'])

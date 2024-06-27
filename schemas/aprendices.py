@@ -9,7 +9,7 @@ class Aprendices(BaseModel):
     ficha: int = Field(..., description="Ficha del aprendiz")
     email: str  = Field(..., description="Correo electronico del aprendiz")
     photo: Optional[str] = Field(None, description="La url de la imagen del aprendiz")
-    finish_date: str = Field(..., description="Fecha de finalización del aprendizaje")
+    finish_date: Optional[str] = Field(None, description="Fecha de finalización del aprendizaje")
     state_id: Optional[int] = Field(None, description="Estado del aprendiz")
     
 
