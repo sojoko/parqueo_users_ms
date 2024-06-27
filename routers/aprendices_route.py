@@ -105,6 +105,33 @@ def get_aprendiz_satus():
 
     return JSONResponse(status_code=200, content=jsonable_encoder(aprendices_combined))
 
+@aprendices_router.get("/api/v1/aprendiz-statu/{document}", tags=['Estatus de Aprendices'])
+def get_aprendiz_status(document: int):
+    db = Session()
+    
+    # Obtener aprendiz
+    aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
+    
+    # Obtener vehículos
+    vehicles = db.query(MotocicletaModel).filter(MotocicletaModel.user_document == document).all()
+    
+    # Convertir aprendiz a diccionario
+    aprendiz_dict = jsonable_encoder(aprendiz) if aprendiz else {}
+    
+    # Convertir vehículos a diccionario y combinarlos
+    vehicles_list = jsonable_encoder(vehicles) if vehicles else []
+    vehicles_dict = {"vehicle_" + str(i): vehicle for i, vehicle in enumerate(vehicles_list)}
+    
+    # Unir los diccionarios
+    response_data = {**aprendiz_dict, **vehicles_dict}
+    
+    return JSONResponse(status_code=200, content=response_data)
+
+
+
+
+
+
 
 @aprendices_router.put("/api/v1/aprendiz-change-status", tags=['cambio de Estatus de Aprendices'])
 def change_aprendiz_satus(req: ChangeStatusRequest):
@@ -117,3 +144,30 @@ def change_aprendiz_satus(req: ChangeStatusRequest):
     db.commit()
     
     return JSONResponse(status_code=200, content=jsonable_encoder({"message": "El estado del aprendiz fue actualizado correctamente"}))
+
+
+
+@aprendices_router.put("/api/v1/aprendiz-update/{document}", tags=['Aprendices'])
+async def update_aprendiz(document: int, aprendices: Aprendices):
+    db = Session()
+    try:
+        # Buscar el aprendiz por el documento
+        aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
+        
+        if not aprendiz:
+            raise HTTPException(status_code=404, detail="Aprendiz no encontrado")
+        
+        # Actualizar los datos del aprendiz
+        aprendiz.name = aprendices.name if aprendices.name else aprendiz.name
+        aprendiz.last_name = aprendices.last_name if aprendices.last_name else aprendiz.last_name
+        aprendiz.document = int(aprendices.document) if aprendices.document else aprendiz.document
+        aprendiz.ficha = int(aprendices.ficha) if aprendices.ficha else aprendiz.ficha
+        aprendiz.email = aprendices.email if aprendices.email else aprendiz.email
+        
+
+        
+        db.commit()
+        
+        return {"message": "El aprendiz fue actualizado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")

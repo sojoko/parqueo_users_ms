@@ -45,3 +45,26 @@ async def get_all_admins():
         return JSONResponse(status_code=200, content=jsonable_encoder(admins))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+
+
+
+@admins_router.put("/api/v1/admins-update/{document}", tags=['admins'])
+async def update_admin(document: int, admins: Admins):
+    db = Session()
+    try:
+        # Buscar el administrador por el documento
+        admin = db.query(AdminModel).filter(AdminModel.document == document).first()
+        
+        if not admin:
+            raise HTTPException(status_code=404, detail="Administrador no encontrado")
+        
+        # Actualizar los datos del administrador
+        admin.name = admins.name if admins.name else admin.name
+        admin.last_name = admins.last_name if admins.last_name else admin.last_name
+        admin.document = int(admins.document) if admins.document else admin.document
+        
+        db.commit()
+        
+        return {"message": "El usuario administrador fue actualizado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
