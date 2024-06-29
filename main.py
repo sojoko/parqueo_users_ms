@@ -11,6 +11,7 @@ from routers.admins_route import admins_router
 from routers.vehicles_route import vehicle_router
 from routers.tickets_route import tickets_route
 from routers.upleader_s3 import upload_to_s3_route
+from routers.parking import parking_router
 
 
 
@@ -32,6 +33,7 @@ app.include_router(admins_router)
 app.include_router(vehicle_router)
 app.include_router(tickets_route)
 app.include_router(upload_to_s3_route)
+app.include_router(parking_router)
 
 
 
