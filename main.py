@@ -14,7 +14,6 @@ from routers.upleader_s3 import upload_to_s3_route
 from routers.parking import parking_router
 
 
-
 app = FastAPI()
 app.title = "Parqueo API"
 app.version = "0.0.1"
@@ -34,11 +33,6 @@ app.include_router(vehicle_router)
 app.include_router(tickets_route)
 app.include_router(upload_to_s3_route)
 app.include_router(parking_router)
-
-
-
-
-
 
 
 
