@@ -9,7 +9,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     document = Column(Integer)
-    password = Column(String(50))
+    password = Column(String(200))
     state_id = Column(Integer, ForeignKey('user_status.id')) 
     roll_id = Column(Integer, ForeignKey('user_roll.id')) 
 

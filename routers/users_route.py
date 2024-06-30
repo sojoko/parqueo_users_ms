@@ -16,7 +16,8 @@ from jwt_manager import create_tokens
 from models.admins import Admins as AdminModel
 from fastapi import FastAPI, HTTPException
 from fastapi import Depends, HTTPException, status
-
+from sqlalchemy import union_all
+import bcrypt
 
 user_router = APIRouter()
 
@@ -37,11 +38,15 @@ def get_user_all():
 
 @user_router.post("/api/v1/login", tags=['Auth'])
 def login(users: User):
-    users.password = int(users.password)
+    db = Session()  
+    users.password = str(users.password)  # Asegúrate de tratar la contraseña como cadena de texto
     users.document = int(users.document)
-    db = Session()
     user = db.query(UserModel).filter(UserModel.document == users.document).first()
-    if not user or not int(user.password) == users.password:        
+    user.password = str(user.password)
+    print(user.password)
+    a = bcrypt.checkpw(users.password.encode('utf-8'), user.password.encode('utf-8'))
+    
+    if not user or not a:        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario o contraseña incorrectos",
@@ -64,12 +69,12 @@ def login(users: User):
     return JSONResponse(status_code=200, content=jsonable_encoder({"name": name, "document": users.document, "access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer", "user_roll": roll}))
 
 
-@user_router.post("/api/v1/create_user", tags=['Users'])
 
+@user_router.post("/api/v1/create_user", tags=['Users'])
 def create_user(users: UserRegistry):
     db = Session()
-    users.password = int(users.password)
-    users.document = int(users.document)
+    users.password = str(users.password)
+    users.document = str(users.document)
     status_default = 1
     user_exist = db.query(UserModel).filter(UserModel.document == users.document).first()
     if user_exist:
@@ -77,10 +82,11 @@ def create_user(users: UserRegistry):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El usuario ya existe",
             )
-    try:      
+    try:        
+        hashed_password = bcrypt.hashpw(users.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')    
         new_user = UserModel(
             document=users.document,
-            password=users.password,
+            password=hashed_password,
             state_id=status_default,
             roll_id=users.roll_id,
         )
@@ -89,11 +95,7 @@ def create_user(users: UserRegistry):
         return {"message": "El usuario fue registrado exitosamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
-    
-    
-    
 
-from sqlalchemy import union_all
 
 @user_router.get("/api/v1/all-persons", tags=['Users'])
 async def get_all_persons(page: int = Query(1, ge=1), per_page: int = Query(5, ge=1)):
