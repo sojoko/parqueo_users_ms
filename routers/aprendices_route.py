@@ -81,27 +81,33 @@ def get_aprendiz_satus_by_document(document: int):
 
 
 
-@aprendices_router.get("/api/v1/aprendiz-statu", tags=['Estatus de Aprendices'])
-def get_aprendiz_satus():
+@aprendices_router.get("/api/v1/aprendiz-status", tags=['Estatus de Aprendices'])
+def get_aprendiz_status():
     db = Session()
     aprendices = db.query(AprendizModel).all()
-    vehicles =  db.query(MotocicletaModel).all()
+    motocicletas = db.query(MotocicletaModel).all()
+    bicicletas = db.query(BicicletaModel).all()
     
     aprendices_dict = {aprendiz.document: aprendiz for aprendiz in aprendices}
     
+    for motocicleta in motocicletas:
+        if motocicleta.user_document in aprendices_dict:
+            aprendiz = aprendices_dict[motocicleta.user_document]
+            aprendiz.vehicle = motocicleta
     
-    for vehicle in vehicles:
-        if vehicle.user_document in aprendices_dict:
-            aprendiz = aprendices_dict[vehicle.user_document]
-            aprendiz.vehicle = vehicle
+    for bicicleta in bicicletas:
+        if bicicleta.user_document in aprendices_dict:
+            aprendiz = aprendices_dict[bicicleta.user_document]
+            aprendiz.vehicle = bicicleta
     
     aprendices_combined = list(aprendices_dict.values())
     
-    # if aprendiz is None:
-    #     raise HTTPException(status_code=404, detail="El documento no fue encontrado")   
-    
+    if aprendiz is None:
+        raise HTTPException(status_code=404, detail="El documento no fue encontrado")   
 
+    
     return JSONResponse(status_code=200, content=jsonable_encoder(aprendices_combined))
+    
 
 @aprendices_router.get("/api/v1/aprendiz-statu/{document}", tags=['Estatus de Aprendices'])
 def get_aprendiz_status(document: int):

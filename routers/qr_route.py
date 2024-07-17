@@ -28,7 +28,7 @@ def create_qr(qr: QR, document: int):
         if diferencia < time_limit:
             return JSONResponse(status_code=200, content=jsonable_encoder(last_qr_image_decode))
     
-    date_request = f'http://localhost:3000/aprendiz-info?document={document}'
+    date_request = f'https://parqueo-frt.pages.dev/aprendiz-info?document={document}'
     qr_binary = b64decode(qr_generator(date_request=date_request))
     qr.qr = qr_binary
     qr.user_document = document

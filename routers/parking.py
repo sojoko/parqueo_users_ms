@@ -57,7 +57,7 @@ async def get_all_parking_counter():
         in_parking_motorcycle = 0
         in_parking_bycicle = 0
         out_of_parking_motorcycle = 0
-        parking_motocycle_capacity = 20
+        parking_motocycle_capacity = 3
         parking_bycicle_capacity = 20
         percent_motorcycle_not_ocupation = 0
         percent_motorcycle_ocupation = 0

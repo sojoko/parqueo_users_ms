@@ -13,8 +13,6 @@ class Motocicletas(BaseModel):
     tarjeta_propiedad: str = Field(..., description="tarjeta de propiedad de la motocicleta")
     observaciones: str = Field(..., description="observaciones de la motocicleta")
     registry_date: Optional[str] = Field(None, description="Fecha de registro de la motocicleta")
-    
-   
 
     class Config:
         schema_extra = {
@@ -29,21 +27,20 @@ class Motocicletas(BaseModel):
                 "observaciones": "observaciones",
                 "registry_date": "2021-12-31"              
             }
-        }
-        
+        }       
         
 class Bicicleta(BaseModel):
-    id: Optional[int] = Field(None, description="Identificador unico de la motocicleta")
+    id: Optional[int] = Field(None, description="Identificador unico de la bicicleta")
     vehicle_type: Optional[int] = Field(None, description="Tipo de vehiculo")
     user_document: int = Field(..., description="Documento del aprendiz asociado al vehiculo")
-    numero_marco: str = Field(..., description="Placa de la motocicleta")
-    marca: str = Field(..., description="Marca de la motocicleta")
-    modelo: str = Field(..., description="Modelo de la motocicleta")
-    color: str = Field(..., description="Color de la motocicleta")
-    foto: str = Field(..., description="Foto de la motocicleta")  
-    tarjeta_propiedad: str = Field(..., description="tarjeta de propiedad de la motocicleta")
-    observaciones: str = Field(..., description="observaciones de la motocicleta")
-    registry_date: str = Field(..., description="Fecha de registro de la motocicleta")  
+    numero_marco: str = Field(..., description="Placa de la bicicleta")
+    marca: str = Field(..., description="Marca de la bicicleta")
+    modelo: str = Field(..., description="Modelo de la bicicleta")
+    color: str = Field(..., description="Color de la bicicleta")
+    foto: str = Field(..., description="Foto de la bicicleta")  
+    tarjeta_propiedad: str = Field(..., description="tarjeta de propiedad de la bicicleta")
+    observaciones: str = Field(..., description="observaciones de la bicicleta")
+    registry_date: Optional[str] = Field(None, description="Fecha de registro de la bicicleta")
    
     class Config:
         schema_extra = {
