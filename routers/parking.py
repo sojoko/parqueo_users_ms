@@ -116,7 +116,7 @@ async def get_parking_by_document(user_document: int):
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
 
-@parking_router.put("/api/v1/parking-registration/{user_document}", tags=['parking'])
+@parking_router.put("/api/v1/parking-registration-update/{user_document}", tags=['parking'])
 async def update_parking(user_document: int, parking: Parking):
     try:
         db = Session()
