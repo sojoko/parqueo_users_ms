@@ -39,6 +39,8 @@ async def create_ticket(Tickets: Tickets):
         return {"message": "El ticket se creo exitosamente."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
 
 # -----------------------------------------------------------------------------------------
     
@@ -142,5 +144,14 @@ def get_tickets_by_user(doc: int):
 @tickets_route.get("/api/v1/Ticket/id/{id}", tags=['Tickets'])
 def get_ticket_by_id(id: int):
     db = Session()
-    get_ticket_by_id = db.query(TicketsModel).filter(TicketsModel.id == id).first()
-    return JSONResponse(status_code=200, content=jsonable_encoder(get_ticket_by_id))
+    try:
+        ticket = db.query(TicketsModel).filter(TicketsModel.id == id).first()        
+        if ticket is None:
+            raise HTTPException(status_code=404, detail="El ticket no fue encontrado")        
+        return JSONResponse(status_code=200, content=jsonable_encoder(ticket))    
+    except HTTPException as http_exc:      
+        raise http_exc
+    except Exception as e:      
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close()  

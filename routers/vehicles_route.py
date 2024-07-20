@@ -38,6 +38,8 @@ async def create_moto(motocicletas: Motocicletas):
         return {"message": "La motocicleta fue registrada exitosamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
     
     
 @vehicle_router.post("/api/v1/bicicleta-registration", tags=['Vehiculos'])
@@ -62,28 +64,46 @@ async def create_byci(bicicleta: Bicicleta):
         return {"message": "La bicileta fue registrada exitosamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
 
 
 @vehicle_router.get("/api/v1/moto/{document}", tags=['Vehiculos'])
 def get_moto_by_user_document(document: int):
     db = Session()
-    moto_by_user_document = db.query(MotoModel).filter(MotoModel.user_document == document).first()
-    if moto_by_user_document is None:
-        raise HTTPException(status_code=404, detail="El vehiculo no fue encontrado")   
-    return JSONResponse(status_code=200, content=jsonable_encoder(moto_by_user_document))
+    try:
+        moto_by_user_document = db.query(MotoModel).filter(MotoModel.user_document == document).first()        
+        if moto_by_user_document is None:
+            raise HTTPException(status_code=404, detail="El vehículo no fue encontrado")        
+        return JSONResponse(status_code=200, content=jsonable_encoder(moto_by_user_document))    
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:    
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close() 
 
 
 @vehicle_router.get("/api/v1/vehicle/{document}", tags=['Vehiculos'])
 def get_vehicle_by_user_document(document: int):
     db = Session()
-    moto_by_user_document = db.query(MotoModel).filter(MotoModel.user_document == document).first()
-    bici_by_user_document = db.query(MotoModel).filter(MotoModel.user_document == document).first()
-    vehicle_for_sent = []
-    if moto_by_user_document is not None:
-        vehicle_for_sent = moto_by_user_document
-    if bici_by_user_document is not None:
-        vehicle_for_sent = bici_by_user_document
+    try:      
+        moto_by_user_document = db.query(MotoModel).filter(MotoModel.user_document == document).first()
+        bici_by_user_document = db.query(BiciModel).filter(BiciModel.user_document == document).first()        
+        vehicle_for_sent = []
+        if moto_by_user_document:
+            vehicle_for_sent.append(moto_by_user_document)
+        if bici_by_user_document:
+            vehicle_for_sent.append(bici_by_user_document)
+        
+        if not vehicle_for_sent:
+            raise HTTPException(status_code=404, detail="No se encontraron vehículos")
+        
+        return JSONResponse(status_code=200, content=jsonable_encoder(vehicle_for_sent))
     
-    if moto_by_user_document is None:
-        raise HTTPException(status_code=404, detail="El vehiculo no fue encontrado")   
-    return JSONResponse(status_code=200, content=jsonable_encoder(vehicle_for_sent))
+    except HTTPException as http_exc:  
+        raise http_exc
+    except Exception as e:  
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close()

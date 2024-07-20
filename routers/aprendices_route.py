@@ -21,7 +21,9 @@ def get_user_all():
         user_dict = user.__dict__
         user_dict['roll'] = "aprendiz"
         aprendices_with_roll.append(user_dict)
-    return JSONResponse(status_code=200, content=jsonable_encoder(aprendices_with_roll))
+    db.close() 
+    return JSONResponse(status_code=200, content=jsonable_encoder(aprendices_with_roll))   
+    
 
 
 @aprendices_router.post("/api/v1/aprendiz-registration", tags=['Aprendices'])
@@ -51,34 +53,60 @@ async def create_aprendiz(aprendices: Aprendices):
         return {"message": "El aprendiz fue registrado exitosamente"}
     except Exception:
         raise HTTPException(status_code=500, detail=f"Error en la operación")
+    finally:
+        db.close()  
 
 
 @aprendices_router.get("/api/v1/aprendices/id/document/{id}", tags=['Aprendices'])
 def get_aprendiz_by_id(id: int):
     db = Session()
-    aprendiz_by_id = db.query(AprendizModel).filter(AprendizModel.id == id).first()
-    return JSONResponse(status_code=200, content=jsonable_encoder(aprendiz_by_id))
+    try:      
+        aprendiz_by_id = db.query(AprendizModel).filter(AprendizModel.id == id).first()       
+        if aprendiz_by_id is None:
+            raise HTTPException(status_code=404, detail="El aprendiz no fue encontrado")        
+        return JSONResponse(status_code=200, content=jsonable_encoder(aprendiz_by_id))    
+    except HTTPException as http_exc:      
+        raise http_exc
+    except Exception as e:        
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close()  
 
 
 @aprendices_router.get("/api/v1/aprendices/{document}", tags=['Aprendices'])
 def get_aprendiz_by_document(document: int):
     db = Session()
-    aprendiz_by_document = db.query(AprendizModel).filter(AprendizModel.document == document).first()
-    if aprendiz_by_document is None:
-        raise HTTPException(status_code=404, detail="El documento no fue encontrado")   
-    return JSONResponse(status_code=200, content=jsonable_encoder(aprendiz_by_document))
+    try:
+        aprendiz_by_document = db.query(AprendizModel).filter(AprendizModel.document == document).first()
+        if aprendiz_by_document is None:
+            raise HTTPException(status_code=404, detail="El documento no fue encontrado")
+        return JSONResponse(status_code=200, content=jsonable_encoder(aprendiz_by_document))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()
 
 
-@aprendices_router.get("/api/v1/aprendiz-status/{document}", tags=['Estatus de Aprendices'])
-def get_aprendiz_satus_by_document(document: int):
+@aprendices_router.get("/api/v1/aprendiz-status/{document}", tags=['Aprendices'])
+def get_aprendiz_status_by_document(document: int):
     db = Session()
-    aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
-    if aprendiz is None:
-        raise HTTPException(status_code=404, detail="El documento no fue encontrado")   
+    try:
+        aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
+        
+        if aprendiz is None:
+            raise HTTPException(status_code=404, detail="El documento no fue encontrado")
+        aprendiz_status_id = aprendiz.state_id 
+        status = db.query(EstadoAprendiz).filter(EstadoAprendiz.id == aprendiz_status_id).first()        
+        if status is None:
+            raise HTTPException(status_code=404, detail="Estado del aprendiz no encontrado")        
+        return JSONResponse(status_code=200, content=jsonable_encoder(status.estado))
     
-    aprendiz_status_id = db.query(AprendizModel).filter(AprendizModel.document == document).first().state_id
-    status = db.query(EstadoAprendiz).filter(EstadoAprendiz.id == aprendiz_status_id).first().estado
-    return JSONResponse(status_code=200, content=jsonable_encoder(status))
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:     
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close() 
 
 
 
@@ -105,8 +133,6 @@ def get_aprendiz_status(
             aprendiz.vehicle = bicicleta
     
     aprendices_combined = list(aprendices_dict.values())
-
-    # Paginación
     total_items = len(aprendices_combined)
     start = (page - 1) * per_page
     end = start + per_page
@@ -126,40 +152,56 @@ def get_aprendiz_status(
     )
     
 
-@aprendices_router.get("/api/v1/aprendiz-statu/{document}", tags=['Estatus de Aprendices'])
+@aprendices_router.get("/api/v1/aprendiz-statu/{document}", tags=['Aprendices'])
 def get_aprendiz_status(document: int):
     db = Session()
-    
-    aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
-    vehicles = db.query(MotocicletaModel).filter(MotocicletaModel.user_document == document).all()
-    
-    aprendiz_dict = jsonable_encoder(aprendiz) if aprendiz else {}
-    vehicles_list = jsonable_encoder(vehicles) if vehicles else []
-    vehicles_dict = {"vehicle_" + str(i): vehicle for i, vehicle in enumerate(vehicles_list)}
-    response_data = {**aprendiz_dict, **vehicles_dict}
-    
-    return JSONResponse(status_code=200, content=response_data)
+    try:
+        aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()    
+        vehicles = db.query(MotocicletaModel).filter(MotocicletaModel.user_document == document).all()
+        
+        aprendiz_dict = jsonable_encoder(aprendiz) if aprendiz else {}
+        vehicles_list = jsonable_encoder(vehicles) if vehicles else []
+        
+        vehicles_dict = {"vehicle_" + str(i): vehicle for i, vehicle in enumerate(vehicles_list)}
+        
+        response_data = {**aprendiz_dict, **vehicles_dict}
+        
+        return JSONResponse(status_code=200, content=response_data)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close() 
 
 
-@aprendices_router.put("/api/v1/aprendiz-change-status", tags=['cambio de Estatus de Aprendices'])
-def change_aprendiz_satus(req: ChangeStatusRequest):
-    document = int(req.document)
+@aprendices_router.put("/api/v1/aprendiz-change-status", tags=['Aprendices'])
+def change_aprendiz_status(req: ChangeStatusRequest):
     db = Session()
-    aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
-    if aprendiz is None:
-        raise HTTPException(status_code=404, detail="El documento no fue encontrado")   
-    aprendiz.state_id = int(req.state_id)
-    db.commit()
+    try:
+        document = int(req.document)        
+        aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
+        
+        if aprendiz is None:
+            raise HTTPException(status_code=404, detail="El documento no fue encontrado")
+        
+        aprendiz.state_id = int(req.state_id)
+        db.commit()
+        
+        return JSONResponse(status_code=200, content=jsonable_encoder({"message": "El estado del aprendiz fue actualizado correctamente"}))
     
-    return JSONResponse(status_code=200, content=jsonable_encoder({"message": "El estado del aprendiz fue actualizado correctamente"}))
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close()  
 
 
 @aprendices_router.put("/api/v1/aprendiz-update/{document}", tags=['Aprendices'])
 async def update_aprendiz(document: int, aprendices: Aprendices):
     db = Session()
     try:
-        aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
-        
+        aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()        
         if not aprendiz:
             raise HTTPException(status_code=404, detail="Aprendiz no encontrado")
         aprendiz.name = aprendices.name if aprendices.name else aprendiz.name
@@ -172,3 +214,5 @@ async def update_aprendiz(document: int, aprendices: Aprendices):
         return {"message": "El aprendiz fue actualizado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  

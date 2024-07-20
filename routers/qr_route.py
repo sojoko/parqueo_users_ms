@@ -71,7 +71,7 @@ async def generate_report():
 
         c.setFont("Helvetica-Bold", 14)        
         c.setFillColorRGB(0.2, 0.333, 1.0)
-        c.drawString(100, height - 80, f"Resumen motocicletas")
+        c.drawString(100, height - 80, f"Resumen motocicletass")
 
         c.setFont("Helvetica", 14)
         c.setFillColorRGB(0, 0, 0)
@@ -153,3 +153,4 @@ async def generate_report():
         raise HTTPException(status_code=exc.response.status_code, detail=f"Error fetching data: {exc.response.text}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating report: {str(e)}")
+   

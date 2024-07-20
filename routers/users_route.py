@@ -24,49 +24,78 @@ user_router = APIRouter()
 
 @user_router.get("/api/v1/users/{document}", tags=['Users'])
 def get_user(document: int):
-    db = Session()  
-    user = db.query(UserModel).filter(UserModel.document == document).first()  
-    return JSONResponse(status_code=200, content=jsonable_encoder(user))
-
+    db = Session()
+    try:
+        user = db.query(UserModel).filter(UserModel.document == document).first()        
+        if user is None:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")        
+        return JSONResponse(status_code=200, content=jsonable_encoder(user))    
+    except HTTPException as http_exc:   
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close()  
 
 @user_router.get("/api/v1/users_all", tags=['Users'])
 def get_user_all():
-    db = Session()  
-    users = db.query(UserModel).all()
-    return JSONResponse(status_code=200, content=jsonable_encoder(users))
+    db = Session()
+    try:
+        users = db.query(UserModel).all()        
+        if not users:
+            raise HTTPException(status_code=404, detail="No se encontraron usuarios")        
+        return JSONResponse(status_code=200, content=jsonable_encoder(users))
+    
+    except HTTPException as http_exc:    
+        raise http_exc
+    except Exception as e:     
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close() 
 
 
 @user_router.post("/api/v1/login", tags=['Auth'])
 def login(users: User):
-    db = Session()  
-    users.password = str(users.password)  # Asegúrate de tratar la contraseña como cadena de texto
-    users.document = int(users.document)
-    user = db.query(UserModel).filter(UserModel.document == users.document).first()
-    user.password = str(user.password)
-    print(user.password)
-    a = bcrypt.checkpw(users.password.encode('utf-8'), user.password.encode('utf-8'))
+    db = Session()
+    try:    
+        users.password = str(users.password)
+        users.document = int(users.document)       
+  
+        user = db.query(UserModel).filter(UserModel.document == users.document).first()
+        
+        if not user or not bcrypt.checkpw(users.password.encode('utf-8'), user.password.encode('utf-8')):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuario o contraseña incorrectos",
+            )
+             
+        roll = user.roll_id        
+      
+        if roll == 1:
+            name = db.query(AdminModel).filter(AdminModel.document == users.document).first().name
+        elif roll == 2:
+            name = db.query(AprendizModel).filter(AprendizModel.document == users.document).first().name
+        elif roll == 3:
+            name = db.query(VigilanteModel).filter(VigilanteModel.document == users.document).first().name
     
-    if not user or not a:        
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario o contraseña incorrectos",
-        )
-
-    roll = db.query(UserModel).filter(UserModel.document == users.document).first().roll_id
+        user_for_token = {"document": user.document, "password": user.password}
+        access_token, refresh_token = create_tokens(data=user_for_token)
+        
+        return JSONResponse(status_code=200, content=jsonable_encoder({
+            "name": name,
+            "document": users.document,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "user_roll": roll
+        }))
     
-    if roll == 1:
-        name = db.query(AdminModel).filter(AdminModel.document == users.document).first().name
-    elif roll == 2:
-        name = db.query(AprendizModel).filter(AprendizModel.document == users.document).first().name
-    elif roll == 3:
-        name = db.query(VigilanteModel).filter(VigilanteModel.document == users.document).first().name
-    
-
-    user_for_token = {"document": user.document, "password": user.password}
-    token = create_tokens(data=user_for_token)
-    access_token = token[0]
-    refresh_token = token[1] 
-    return JSONResponse(status_code=200, content=jsonable_encoder({"name": name, "document": users.document, "access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer", "user_roll": roll}))
+    except HTTPException as http_exc:      
+        raise http_exc
+    except Exception as e:       
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
+    finally:
+        db.close()  
 
 
 
@@ -95,6 +124,8 @@ def create_user(users: UserRegistry):
         return {"message": "El usuario fue registrado exitosamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
 
 
 @user_router.get("/api/v1/all-persons", tags=['Users'])
@@ -158,4 +189,6 @@ async def edit_user_by_person(document: int, roll : int):
             db.close()  
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
 

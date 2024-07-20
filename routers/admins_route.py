@@ -35,6 +35,8 @@ async def create_admin(admins : Admins):
         return {"message": "El usuario Admin fue regitrado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close() 
 
 
 @admins_router.get("/api/v1/admins-all", tags=['admins'])
@@ -45,6 +47,8 @@ async def get_all_admins():
         return JSONResponse(status_code=200, content=jsonable_encoder(admins))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close() 
 
 
 
@@ -68,3 +72,5 @@ async def update_admin(document: int, admins: Admins):
         return {"message": "El usuario administrador fue actualizado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close() 

@@ -28,14 +28,15 @@ async def create_parking(parking : Parking):
         new_paking = ParkingModel(
             user_document=parking.user_document,
             is_in_parking=parking.is_in_parking,
-            vehicle_type=parking.vehicle_type
-                                   
+            vehicle_type=parking.vehicle_type                                   
         )
         db.add(new_paking)
         db.commit()
         return {"message": "El movimiento fue regitrado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
 
 
 @parking_router.get("/api/v1/parking-all", tags=['parking'])
@@ -46,6 +47,8 @@ async def get_all_parking():
         return JSONResponse(status_code=200, content=jsonable_encoder(parking))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
     
     
 @parking_router.get("/api/v1/parking-all-counter", tags=['parking'])
@@ -62,8 +65,7 @@ async def get_all_parking_counter():
         percent_motorcycle_not_ocupation = 0
         percent_motorcycle_ocupation = 0
         percent_bycicle_ocupation = 0
-        percent_bycicle_not_ocupation = 0
-      
+        percent_bycicle_not_ocupation = 0     
         
         for doc in parking:
             if doc.vehicle_type == 1 and doc.is_in_parking == 1:
@@ -94,8 +96,7 @@ async def get_all_parking_counter():
             "percent_motorcycle_ocupation": percent_motorcycle_ocupation,
             "percent_motorcycle_not_ocupation": percent_motorcycle_not_ocupation,
             "percent_bycicle_ocupation": percent_bycicle_ocupation,
-            "percent_bycicle_not_ocupation": percent_bycicle_not_ocupation
-        
+            "percent_bycicle_not_ocupation": percent_bycicle_not_ocupation        
         }
         
         return JSONResponse(status_code=200, content=jsonable_encoder(response))
@@ -103,8 +104,7 @@ async def get_all_parking_counter():
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
     finally:
         db.close()
-    
-    
+     
     
 @parking_router.get("/api/v1/parking-by-document/{user_document}", tags=['parking'])
 async def get_parking_by_document(user_document: int):
@@ -114,6 +114,8 @@ async def get_parking_by_document(user_document: int):
         return JSONResponse(status_code=200, content=jsonable_encoder(parking))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
 
 
 @parking_router.put("/api/v1/parking-registration-update/{user_document}", tags=['parking'])
@@ -135,3 +137,5 @@ async def update_parking(user_document: int, parking: Parking):
         return {"message": "El registro de parqueo fue actualizado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()  
