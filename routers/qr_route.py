@@ -59,7 +59,7 @@ def create_qr(qr: QR, document: int):
 async def generate_report():
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get('http://localhost:8000/api/v1/parking-all-counter')
+            response = await client.get('https://3.86.233.19:8000/api/v1/parking-all-counter')
             response.raise_for_status()
             data = response.json()
 
