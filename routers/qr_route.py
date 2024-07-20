@@ -55,7 +55,7 @@ def create_qr(qr: QR, document: int):
     return JSONResponse(status_code=200, content=jsonable_encoder(qr_code_generated_binary))
 
 
-@qr_router.get("/generate-report", tags=['Report'], response_class=FileResponse)
+@qr_router.get("/api/v1/generate-report", tags=['Report'], response_class=FileResponse)
 async def generate_report():
     try:
         async with httpx.AsyncClient(verify=False) as client:
