@@ -143,8 +143,8 @@ async def generate_report():
         bike_chart = create_chart(bike_data, bike_labels, 'Ocupacion de bicicletas')
 
         
-        c.drawImage(moto_chart, 20, height - 680, width=270, height=270)
-        c.drawImage(bike_chart, 300, height - 680, width=270, height=270)
+        c.drawImage(moto_chart, 20, height - 680, width=285, height=270)
+        c.drawImage(bike_chart, 300, height - 680, width=285, height=270)
 
         c.save()
 
