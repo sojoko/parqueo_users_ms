@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -8,6 +8,7 @@ from schemas.aprendices import Aprendices, ChangeStatusRequest
 from models.aprendices import EstadoAprendiz
 from models.vehicles import Motocicleta as MotocicletaModel
 from models.vehicles import Bicicleta as BicicletaModel
+from typing import List, Optional
 
 aprendices_router = APIRouter()
 
@@ -82,7 +83,10 @@ def get_aprendiz_satus_by_document(document: int):
 
 
 @aprendices_router.get("/api/v1/aprendiz-status", tags=['Estatus de Aprendices'])
-def get_aprendiz_status():
+def get_aprendiz_status(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(5, ge=1)
+):
     db = Session()
     aprendices = db.query(AprendizModel).all()
     motocicletas = db.query(MotocicletaModel).all()
@@ -101,12 +105,25 @@ def get_aprendiz_status():
             aprendiz.vehicle = bicicleta
     
     aprendices_combined = list(aprendices_dict.values())
-    
-    if aprendiz is None:
-        raise HTTPException(status_code=404, detail="El documento no fue encontrado")   
 
+    # Paginación
+    total_items = len(aprendices_combined)
+    start = (page - 1) * per_page
+    end = start + per_page
+    aprendices_paginated = aprendices_combined[start:end]
     
-    return JSONResponse(status_code=200, content=jsonable_encoder(aprendices_combined))
+    if not aprendices_paginated:
+        raise HTTPException(status_code=404, detail="No hay aprendices en esta página")
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "total_items": total_items,
+            "page": page,
+            "per_page": per_page,
+            "items": jsonable_encoder(aprendices_paginated)
+        }
+    )
     
 
 @aprendices_router.get("/api/v1/aprendiz-statu/{document}", tags=['Estatus de Aprendices'])

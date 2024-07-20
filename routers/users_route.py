@@ -98,24 +98,43 @@ def create_user(users: UserRegistry):
 
 
 @user_router.get("/api/v1/all-persons", tags=['Users'])
-async def get_all_persons(page: int = Query(1, ge=1), per_page: int = Query(5, ge=1)):
+async def get_all_persons(
+    page: int = Query(1, ge=1), 
+    per_page: int = Query(5, ge=1)
+):
     try:
         db = Session()
-        try:
+        try:         
             skip = (page - 1) * per_page
+
+            total_vigilantes = db.query(VigilanteModel).count()
+            total_aprendices = db.query(AprendizModel).count()
+            total_admins = db.query(AdminModel).count()
+
             vigilants = db.query(VigilanteModel).offset(skip).limit(per_page).all()
             aprendices = db.query(AprendizModel).offset(skip).limit(per_page).all()
             admins = db.query(AdminModel).offset(skip).limit(per_page).all()
 
+        
             vigilantes_with_roll = [{'roll': 'vigilante', **vigilante.__dict__} for vigilante in vigilants]
             aprendices_with_roll = [{'roll': 'aprendiz', **aprendiz.__dict__} for aprendiz in aprendices]
             admins_with_roll = [{'roll': 'admin', **admin.__dict__} for admin in admins]
 
+      
             unidos = vigilantes_with_roll + aprendices_with_roll + admins_with_roll
+            total_items = total_vigilantes + total_aprendices + total_admins
 
-            return JSONResponse(status_code=200, content=jsonable_encoder(unidos))
+            return JSONResponse(
+                status_code=200, 
+                content={
+                    "total_items": total_items,
+                    "page": page,
+                    "per_page": per_page,
+                    "items": jsonable_encoder(unidos)
+                }
+            )
         finally:
-            db.close()  
+            db.close()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
     
