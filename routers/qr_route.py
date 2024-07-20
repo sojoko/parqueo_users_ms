@@ -58,7 +58,7 @@ def create_qr(qr: QR, document: int):
 @qr_router.get("/generate-report", tags=['Report'], response_class=FileResponse)
 async def generate_report():
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=False) as client:
             response = await client.get('https://3.86.233.19:8000/api/v1/parking-all-counter')
             response.raise_for_status()
             data = response.json()
