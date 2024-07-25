@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
+from jwt_manager import TokenData, verify_token
 from models.aprendices import Aprendices as AprendizModel
 from schemas.aprendices import Aprendices
 from models.aprendices import EstadoAprendiz
@@ -17,7 +18,7 @@ vehicle_router = APIRouter()
 
 
 @vehicle_router.post("/api/v1/motocicleta-registration", tags=['Vehiculos'])
-async def create_moto(motocicletas: Motocicletas):
+async def create_moto(motocicletas: Motocicletas, token: TokenData = Depends(verify_token)):
     try:            
         motocicletas.user_document = int(motocicletas.user_document)   
         vehicle_type = 1   
@@ -43,7 +44,7 @@ async def create_moto(motocicletas: Motocicletas):
     
     
 @vehicle_router.post("/api/v1/bicicleta-registration", tags=['Vehiculos'])
-async def create_byci(bicicleta: Bicicleta):
+async def create_byci(bicicleta: Bicicleta, token: TokenData = Depends(verify_token)):
     try:            
         bicicleta.user_document = int(bicicleta.user_document)   
         vehicle_type = 2  
@@ -69,7 +70,7 @@ async def create_byci(bicicleta: Bicicleta):
 
 
 @vehicle_router.get("/api/v1/moto/{document}", tags=['Vehiculos'])
-def get_moto_by_user_document(document: int):
+def get_moto_by_user_document(document: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         moto_by_user_document = db.query(MotoModel).filter(MotoModel.user_document == document).first()        
@@ -85,7 +86,7 @@ def get_moto_by_user_document(document: int):
 
 
 @vehicle_router.get("/api/v1/vehicle/{document}", tags=['Vehiculos'])
-def get_vehicle_by_user_document(document: int):
+def get_vehicle_by_user_document(document: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:      
         moto_by_user_document = db.query(MotoModel).filter(MotoModel.user_document == document).first()

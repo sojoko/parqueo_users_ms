@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
+from jwt_manager import TokenData, verify_token
 from models.admins import Admins as AdminModel
 from schemas.admins import Admins
 from fastapi import Depends, HTTPException, status
@@ -16,7 +17,7 @@ upload_to_s3_route = APIRouter()
 
 
 @upload_to_s3_route.post("/api/v1/upload_img_s3", tags=['upload_img_s3'])
-async def upload_img_to_s3(image: UploadFile = File(...)):  
+async def upload_img_to_s3(image: UploadFile = File(...), token: TokenData = Depends(verify_token)):  
     bucket_url = 'https://d351ygrurko1q2.cloudfront.net/'
     try:
         object_name = image.filename     

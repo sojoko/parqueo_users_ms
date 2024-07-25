@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
+from jwt_manager import TokenData, verify_token
 from models.aprendices import Aprendices as AprendizModel
 from schemas.aprendices import Aprendices, ChangeStatusRequest
 from models.aprendices import EstadoAprendiz
@@ -13,7 +14,7 @@ from typing import List, Optional
 aprendices_router = APIRouter()
 
 @aprendices_router.get("/api/v1/aprendices-all", tags=['Aprendices'])
-def get_user_all():
+def get_user_all(token: TokenData = Depends(verify_token)):
     db = Session()  
     aprendinces = db.query(AprendizModel).all()
     aprendices_with_roll = []
@@ -27,7 +28,7 @@ def get_user_all():
 
 
 @aprendices_router.post("/api/v1/aprendiz-registration", tags=['Aprendices'])
-async def create_aprendiz(aprendices: Aprendices):
+async def create_aprendiz(aprendices: Aprendices, token: TokenData = Depends(verify_token)):
     
     db = Session()
     aprendiz_exist = db.query(AprendizModel).filter(AprendizModel.document == aprendices.document).first()
@@ -58,7 +59,7 @@ async def create_aprendiz(aprendices: Aprendices):
 
 
 @aprendices_router.get("/api/v1/aprendices/id/document/{id}", tags=['Aprendices'])
-def get_aprendiz_by_id(id: int):
+def get_aprendiz_by_id(id: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:      
         aprendiz_by_id = db.query(AprendizModel).filter(AprendizModel.id == id).first()       
@@ -74,7 +75,7 @@ def get_aprendiz_by_id(id: int):
 
 
 @aprendices_router.get("/api/v1/aprendices/{document}", tags=['Aprendices'])
-def get_aprendiz_by_document(document: int):
+def get_aprendiz_by_document(document: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         aprendiz_by_document = db.query(AprendizModel).filter(AprendizModel.document == document).first()
@@ -113,7 +114,8 @@ def get_aprendiz_status_by_document(document: int):
 @aprendices_router.get("/api/v1/aprendiz-status", tags=['Estatus de Aprendices'])
 def get_aprendiz_status(
     page: int = Query(1, ge=1),
-    per_page: int = Query(5, ge=1)
+    per_page: int = Query(5, ge=1),
+    token: TokenData = Depends(verify_token)
 ):
     db = Session()
     aprendices = db.query(AprendizModel).all()
@@ -153,7 +155,7 @@ def get_aprendiz_status(
     
 
 @aprendices_router.get("/api/v1/aprendiz-statu/{document}", tags=['Aprendices'])
-def get_aprendiz_status(document: int):
+def get_aprendiz_status(document: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()    
@@ -175,7 +177,7 @@ def get_aprendiz_status(document: int):
 
 
 @aprendices_router.put("/api/v1/aprendiz-change-status", tags=['Aprendices'])
-def change_aprendiz_status(req: ChangeStatusRequest):
+def change_aprendiz_status(req: ChangeStatusRequest, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         document = int(req.document)        
@@ -198,7 +200,7 @@ def change_aprendiz_status(req: ChangeStatusRequest):
 
 
 @aprendices_router.put("/api/v1/aprendiz-update/{document}", tags=['Aprendices'])
-async def update_aprendiz(document: int, aprendices: Aprendices):
+async def update_aprendiz(document: int, aprendices: Aprendices, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()        

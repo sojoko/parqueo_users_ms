@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from models.aprendices import Aprendices as AprendizModel
 from models.vigilantes import Vigilantes as VigilanteModel
 from models.admins import Admins as AdminModel
-from jwt_manager import create_tokens
+from jwt_manager import TokenData, create_tokens, verify_token
 from models.admins import Admins as AdminModel
 from fastapi import FastAPI, HTTPException
 from fastapi import Depends, HTTPException, status
@@ -23,7 +23,7 @@ user_router = APIRouter()
 
 
 @user_router.get("/api/v1/users/{document}", tags=['Users'])
-def get_user(document: int):
+def get_user(document: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         user = db.query(UserModel).filter(UserModel.document == document).first()        
@@ -35,11 +35,11 @@ def get_user(document: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
     finally:
-        db.close()  
+        db.close()
         
         
 @user_router.delete("/api/v1/users/delete/{document}/{roll}", tags=['Users']) 
-def delete_user(document: int, roll: int):
+def delete_user(document: int, roll: int, token: TokenData = Depends(verify_token)):
     db = Session()
    
     try:
@@ -99,8 +99,7 @@ def login(users: User):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuario o contraseña incorrectos",
-            )
-             
+            )             
         roll = user.roll_id        
       
         if roll == 1:
@@ -120,8 +119,7 @@ def login(users: User):
             "refresh_token": refresh_token,
             "token_type": "bearer",
             "user_roll": roll
-        }))
-    
+        }))    
     except HTTPException as http_exc:      
         raise http_exc
     except Exception as e:       
@@ -132,7 +130,7 @@ def login(users: User):
 
 
 @user_router.post("/api/v1/create_user", tags=['Users'])
-def create_user(users: UserRegistry):
+def create_user(users: UserRegistry, token: TokenData = Depends(verify_token)):
     db = Session()
     users.password = str(users.password)
     users.document = str(users.document)
@@ -163,7 +161,8 @@ def create_user(users: UserRegistry):
 @user_router.get("/api/v1/all-persons", tags=['Users'])
 async def get_all_persons(
     page: int = Query(1, ge=1), 
-    per_page: int = Query(5, ge=1)
+    per_page: int = Query(5, ge=1,),
+    token: TokenData = Depends(verify_token)
 ):
     try:
         db = Session()
@@ -204,7 +203,7 @@ async def get_all_persons(
     
     
 @user_router.get("/api/v1/edit_user_by_person", tags=['Users'])
-async def edit_user_by_person(document: int, roll : int):
+async def edit_user_by_person(document: int, roll : int, token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         try:

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
+from jwt_manager import TokenData, verify_token
 from models.vigilantes import Vigilantes as VigilanteModel
 from schemas.vigilantes import Vigilantes
 from models.aprendices import EstadoAprendiz
@@ -10,7 +11,7 @@ from models.aprendices import EstadoAprendiz
 vigilante_router = APIRouter()
 
 @vigilante_router.post("/api/v1/vigilantes-registration", tags=['Vigilantes'])
-async def create_vigilante(vigilantes: Vigilantes):
+async def create_vigilante(vigilantes: Vigilantes, token: TokenData = Depends(verify_token)):
     db = Session()
     try:   
         vigilantes.document = int(vigilantes.document)
@@ -35,7 +36,7 @@ async def create_vigilante(vigilantes: Vigilantes):
         db.close() 
     
 @vigilante_router.put("/api/v1/vigilantes-update/{document}", tags=['Vigilantes'])
-async def update_vigilante(document: int, vigilantes: Vigilantes):
+async def update_vigilante(document: int, vigilantes: Vigilantes, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         vigilante = db.query(VigilanteModel).filter(VigilanteModel.document == document).first()
@@ -57,7 +58,7 @@ async def update_vigilante(document: int, vigilantes: Vigilantes):
 
 
 @vigilante_router.get("/api/v1/vigilantes-all", tags=['Vigilantes'])
-async def get_all_vigilant(page: int = Query(1, ge=1), per_page: int = Query(5, ge=1)):
+async def get_all_vigilant(page: int = Query(1, ge=1), per_page: int = Query(5, ge=1), token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         try:

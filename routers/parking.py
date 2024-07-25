@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
+from jwt_manager import TokenData, verify_token
 from models.parking import Parking as ParkingModel
 from schemas.parking import Parking
 from fastapi import Depends, HTTPException, status
@@ -14,7 +15,7 @@ parking_router = APIRouter()
 
 
 @parking_router.post("/api/v1/parking-registration", tags=['parking'])
-async def create_parking(parking : Parking):
+async def create_parking(parking : Parking, token: TokenData = Depends(verify_token)):
     db = Session()
     parking.user_document = int(parking.user_document)
     
@@ -40,7 +41,7 @@ async def create_parking(parking : Parking):
 
 
 @parking_router.get("/api/v1/parking-all", tags=['parking'])
-async def get_all_parking():
+async def get_all_parking(token: TokenData = Depends(verify_token)):
     try:      
         db = Session()  
         parking = db.query(ParkingModel).all()
@@ -107,7 +108,7 @@ async def get_all_parking_counter():
      
     
 @parking_router.get("/api/v1/parking-by-document/{user_document}", tags=['parking'])
-async def get_parking_by_document(user_document: int):
+async def get_parking_by_document(user_document: int, token: TokenData = Depends(verify_token)):
     try:      
         db = Session()  
         parking = db.query(ParkingModel).filter(ParkingModel.user_document == user_document).first()
@@ -119,7 +120,7 @@ async def get_parking_by_document(user_document: int):
 
 
 @parking_router.put("/api/v1/parking-registration-update/{user_document}", tags=['parking'])
-async def update_parking(user_document: int, parking: Parking):
+async def update_parking(user_document: int, parking: Parking, token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         parking_record = db.query(ParkingModel).filter(ParkingModel.user_document == user_document).first()

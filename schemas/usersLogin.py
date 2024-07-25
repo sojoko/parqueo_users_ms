@@ -3,8 +3,8 @@ from typing import Optional
 
 class User(BaseModel):
     id: Optional[int] = Field(None, description="Identificador unico del usuario")   
-    document: str = Field(..., description="Documento del usuario")
-    password: int = Field(..., description="Ficha del usuario")
+    document: int = Field(..., description="Documento del usuario")
+    password: str = Field(..., description="Ficha del usuario")
  
 
     class Config:

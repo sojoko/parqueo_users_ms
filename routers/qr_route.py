@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 import httpx
+from jwt_manager import TokenData, verify_token
 from models.qr import QR as QRModel
 from schemas.qr import QR 
 from qr import qr_generator
@@ -20,7 +21,7 @@ qr_router = APIRouter()
 
 
 @qr_router.post("/api/v1/qr", tags=['QR'])
-def create_qr(qr: QR, document: int):
+def create_qr(qr: QR, document: int, token: TokenData = Depends(verify_token)):
     
     db = Session()
     document = int(document) 

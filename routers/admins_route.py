@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
+from jwt_manager import TokenData, verify_token
 from models.admins import Admins as AdminModel
 from schemas.admins import Admins
 from fastapi import Depends, HTTPException, status
@@ -14,7 +15,7 @@ admins_router = APIRouter()
 
 
 @admins_router.post("/api/v1/admins-registration", tags=['admins'])
-async def create_admin(admins : Admins):
+async def create_admin(admins : Admins, token: TokenData = Depends(verify_token)):
     db = Session()
     admins.document = int(admins.document)
     
@@ -40,7 +41,7 @@ async def create_admin(admins : Admins):
 
 
 @admins_router.get("/api/v1/admins-all", tags=['admins'])
-async def get_all_admins():
+async def get_all_admins(token: TokenData = Depends(verify_token)):
     try:      
         db = Session()  
         admins = db.query(AdminModel).all()
@@ -53,7 +54,7 @@ async def get_all_admins():
 
 
 @admins_router.put("/api/v1/admins-update/{document}", tags=['admins'])
-async def update_admin(document: int, admins: Admins):
+async def update_admin(document: int, admins: Admins, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         # Buscar el administrador por el documento

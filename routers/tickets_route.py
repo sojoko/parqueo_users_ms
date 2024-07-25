@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime, timedelta
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
+from jwt_manager import TokenData, verify_token
 from schemas.tickets import Tickets
 from models.tickets import Tickets as TicketsModel
 from models.aprendices import Aprendices as AprendizModel
@@ -68,7 +69,7 @@ async def update_ticket(id: int, Tickets: Tickets):
 #   --------------------------------------------------------------------------------------------    
 
 @tickets_route.get("/api/v1/Tickets", tags=['Tickets'])
-def get_tickets():
+def get_tickets(token: TokenData = Depends(verify_token)):
     db = Session()
     tickets = db.query(TicketsModel).all()
     ticket_data = []
@@ -122,7 +123,7 @@ def get_tickets():
 # ----------------------------------------------------------------------------------------------------
 
 @tickets_route.get("/api/v1/Tickets-by-user/{doc}", tags=['Tickets'])
-def get_tickets_by_user(doc: int):
+def get_tickets_by_user(doc: int, token: TokenData = Depends(verify_token)):
     db = Session()
     tickets = db.query(TicketsModel).filter(TicketsModel.document == doc)
     ticket_data = []
