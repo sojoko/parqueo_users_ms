@@ -71,7 +71,7 @@ async def generate_report():
 
         c.setFont("Helvetica-Bold", 14)        
         c.setFillColorRGB(0.2, 0.333, 1.0)
-        c.drawString(100, height - 80, f"Resumen motocicletass")
+        c.drawString(100, height - 80, f"Resumen motocicletas")
 
         c.setFont("Helvetica", 14)
         c.setFillColorRGB(0, 0, 0)

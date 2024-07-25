@@ -36,6 +36,38 @@ def get_user(document: int):
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
     finally:
         db.close()  
+        
+        
+@user_router.delete("/api/v1/users/delete/{document}/{roll}", tags=['Users']) 
+def delete_user(document: int, roll: int):
+    db = Session()
+   
+    try:
+        user = None
+        if roll == 1:
+            user = db.query(AdminModel).filter(AdminModel.document == document).first()
+        elif roll == 2:
+            user = db.query(AprendizModel).filter(AprendizModel.document == document).first()
+        elif roll == 3:
+            user = db.query(VigilanteModel).filter(VigilanteModel.document == document).first()
+        else:
+            raise HTTPException(status_code=400, detail="Rol no válido")
+        
+        if user is None:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+        db.delete(user)
+        db.commit()
+        return JSONResponse(status_code=200, content={"message": "Usuario eliminado con éxito"})
+    
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+    finally:
+        db.close()
+        
 
 @user_router.get("/api/v1/users_all", tags=['Users'])
 def get_user_all():
