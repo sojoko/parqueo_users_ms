@@ -18,7 +18,7 @@ vehicle_router = APIRouter()
 
 
 @vehicle_router.post("/api/v1/motocicleta-registration", tags=['Vehiculos'])
-async def create_moto(motocicletas: Motocicletas, token: TokenData = Depends(verify_token)):
+async def create_moto(motocicletas: Motocicletas):
     try:            
         motocicletas.user_document = int(motocicletas.user_document)   
         vehicle_type = 1   
@@ -44,7 +44,7 @@ async def create_moto(motocicletas: Motocicletas, token: TokenData = Depends(ver
     
     
 @vehicle_router.post("/api/v1/bicicleta-registration", tags=['Vehiculos'])
-async def create_byci(bicicleta: Bicicleta, token: TokenData = Depends(verify_token)):
+async def create_byci(bicicleta: Bicicleta):
     try:            
         bicicleta.user_document = int(bicicleta.user_document)   
         vehicle_type = 2  
