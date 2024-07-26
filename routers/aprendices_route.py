@@ -28,7 +28,7 @@ def get_user_all(token: TokenData = Depends(verify_token)):
 
 
 @aprendices_router.post("/api/v1/aprendiz-registration", tags=['Aprendices'])
-async def create_aprendiz(aprendices: Aprendices, token: TokenData = Depends(verify_token)):
+async def create_aprendiz(aprendices: Aprendices):
     
     db = Session()
     aprendiz_exist = db.query(AprendizModel).filter(AprendizModel.document == aprendices.document).first()
