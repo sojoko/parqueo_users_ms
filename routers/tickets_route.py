@@ -17,7 +17,7 @@ tickets_route = APIRouter()
 
 
 @tickets_route.post("/api/v1/tickets-registration", tags=['Tickets'])
-async def create_ticket(Tickets: Tickets):
+async def create_ticket(Tickets: Tickets, token: TokenData = Depends(verify_token)):
     db = Session()
     user = db.query(UserModel).filter(UserModel.document == Tickets.document).first() 
     try:       
@@ -46,7 +46,7 @@ async def create_ticket(Tickets: Tickets):
 # -----------------------------------------------------------------------------------------
     
 @tickets_route.put("/api/v1/ticket-response/{id}", tags=['Tickets'])
-async def update_ticket(id: int, Tickets: Tickets):
+async def update_ticket(id: int, Tickets: Tickets,  token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         ticket = db.query(TicketsModel).filter(TicketsModel.id == id).first()
@@ -143,7 +143,7 @@ def get_tickets_by_user(doc: int, token: TokenData = Depends(verify_token)):
 # ----------------------------------------------------------------------------------------------------
 
 @tickets_route.get("/api/v1/Ticket/id/{id}", tags=['Tickets'])
-def get_ticket_by_id(id: int):
+def get_ticket_by_id(id: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         ticket = db.query(TicketsModel).filter(TicketsModel.id == id).first()        

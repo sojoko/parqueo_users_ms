@@ -53,7 +53,7 @@ async def get_all_parking(token: TokenData = Depends(verify_token)):
     
     
 @parking_router.get("/api/v1/parking-all-counter", tags=['parking'])
-async def get_all_parking_counter():
+async def get_all_parking_counter(token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         parking = db.query(ParkingModel).all()
