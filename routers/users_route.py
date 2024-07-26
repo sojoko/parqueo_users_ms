@@ -130,7 +130,7 @@ def login(users: User):
 
 
 @user_router.post("/api/v1/create_user", tags=['Users'])
-def create_user(users: UserRegistry, token: TokenData = Depends(verify_token)):
+def create_user(users: UserRegistry):
     db = Session()
     users.password = str(users.password)
     users.document = str(users.document)
