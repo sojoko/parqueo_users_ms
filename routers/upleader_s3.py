@@ -17,7 +17,7 @@ upload_to_s3_route = APIRouter()
 
 
 @upload_to_s3_route.post("/api/v1/upload_img_s3", tags=['upload_img_s3'])
-async def upload_img_to_s3(image: UploadFile = File(...), token: TokenData = Depends(verify_token)):  
+async def upload_img_to_s3(image: UploadFile = File(...)):  
     bucket_url = 'https://d351ygrurko1q2.cloudfront.net/'
     try:
         object_name = image.filename     
