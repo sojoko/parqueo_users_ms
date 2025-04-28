@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from jwt_manager import TokenData, verify_token
+from main import limiter
 from models.vigilantes import Vigilantes as VigilanteModel
 from schemas.vigilantes import Vigilantes
-from models.aprendices import EstadoAprendiz
+
     
 vigilante_router = APIRouter()
 
+@limiter.limit("20/minute")
 @vigilante_router.post("/api/v1/vigilantes-registration", tags=['Vigilantes'])
-async def create_vigilante(vigilantes: Vigilantes, token: TokenData = Depends(verify_token)):
+async def create_vigilante(request:Request, vigilantes: Vigilantes, token: TokenData = Depends(verify_token)):
     db = Session()
     try:   
         vigilantes.document = int(vigilantes.document)
@@ -34,9 +35,9 @@ async def create_vigilante(vigilantes: Vigilantes, token: TokenData = Depends(ve
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
     finally:
         db.close() 
-    
+@limiter.limit("20/minute")
 @vigilante_router.put("/api/v1/vigilantes-update/{document}", tags=['Vigilantes'])
-async def update_vigilante(document: int, vigilantes: Vigilantes, token: TokenData = Depends(verify_token)):
+async def update_vigilante(request:Request, document: int, vigilantes: Vigilantes, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         vigilante = db.query(VigilanteModel).filter(VigilanteModel.document == document).first()
@@ -56,9 +57,9 @@ async def update_vigilante(document: int, vigilantes: Vigilantes, token: TokenDa
     finally:
         db.close()
 
-
+@limiter.limit("20/minute")
 @vigilante_router.get("/api/v1/vigilantes-all", tags=['Vigilantes'])
-async def get_all_vigilant(page: int = Query(1, ge=1), per_page: int = Query(5, ge=1), token: TokenData = Depends(verify_token)):
+async def get_all_vigilant(request:Request, page: int = Query(1, ge=1), per_page: int = Query(5, ge=1), token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         try:

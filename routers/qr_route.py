@@ -11,17 +11,16 @@ from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from reportlab.lib import colors
 import matplotlib.pyplot as plt
-import io
 import tempfile
+from fastapi import Request
 
 
 qr_router = APIRouter()
 
-
+@limiter.limit("20/minute")
 @qr_router.post("/api/v1/qr", tags=['QR'])
-def create_qr(qr: QR, document: int, token: TokenData = Depends(verify_token)):
+def create_qr(request:Request, qr: QR, document: int, token: TokenData = Depends(verify_token)):
     
     db = Session()
     document = int(document) 
@@ -55,12 +54,12 @@ def create_qr(qr: QR, document: int, token: TokenData = Depends(verify_token)):
     
     return JSONResponse(status_code=200, content=jsonable_encoder(qr_code_generated_binary))
 
-
+@limiter.limit("20/minute")
 @qr_router.get("/api/v1/generate-report", tags=['Report'], response_class=FileResponse)
-async def generate_report():
+async def generate_report(request:Request):
     try:
         async with httpx.AsyncClient(verify=False) as client:
-            response = await client.get('https://3.86.233.19:8000/api/v1/parking-all-counter')
+            response = await client.get('https://parqueousersms-production.up.railway.app:8000/api/v1/parking-all-counter')
             response.raise_for_status()
             data = response.json()
 

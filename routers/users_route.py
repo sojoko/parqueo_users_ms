@@ -1,29 +1,24 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
+
+from main import limiter
 from models.users import User as UserModel
-from models.users import UserStatus, UserRoll
 from schemas.usersLogin import User
 from schemas.usersRegistry import UserRegistry
-from schemas.vigilantes import Vigilantes
-from schemas.aprendices import Aprendices
-from schemas.admins import Admins
 from fastapi.encoders import jsonable_encoder
 from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from models.aprendices import Aprendices as AprendizModel
 from models.vigilantes import Vigilantes as VigilanteModel
-from models.admins import Admins as AdminModel
 from jwt_manager import TokenData, create_tokens, verify_token
 from models.admins import Admins as AdminModel
-from fastapi import FastAPI, HTTPException
 from fastapi import Depends, HTTPException, status
-from sqlalchemy import union_all
 import bcrypt
 
 user_router = APIRouter()
 
-
+@limiter.limit("20/minute")
 @user_router.get("/api/v1/users/{document}", tags=['Users'])
-def get_user(document: int, token: TokenData = Depends(verify_token)):
+def get_user(request:Request, document: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         user = db.query(UserModel).filter(UserModel.document == document).first()        
@@ -36,10 +31,10 @@ def get_user(document: int, token: TokenData = Depends(verify_token)):
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
     finally:
         db.close()
-        
-        
+
+@limiter.limit("20/minute")
 @user_router.delete("/api/v1/users/delete/{document}/{roll}", tags=['Users']) 
-def delete_user(document: int, roll: int, token: TokenData = Depends(verify_token)):
+def delete_user(request:Request, document: int, roll: int, token: TokenData = Depends(verify_token)):
     db = Session()
    
     try:
@@ -68,9 +63,9 @@ def delete_user(document: int, roll: int, token: TokenData = Depends(verify_toke
     finally:
         db.close()
         
-
+@limiter.limit("20/minute")
 @user_router.get("/api/v1/users_all", tags=['Users'])
-def get_user_all():
+def get_user_all(request:Request):
     db = Session()
     try:
         users = db.query(UserModel).all()        
@@ -85,9 +80,9 @@ def get_user_all():
     finally:
         db.close() 
 
-
+@limiter.limit("20/minute")
 @user_router.post("/api/v1/login", tags=['Auth'])
-def login(users: User):
+def login(request:Request, users: User):
     db = Session()
     try:    
         users.password = str(users.password)
@@ -128,9 +123,9 @@ def login(users: User):
         db.close()  
 
 
-
+@limiter.limit("20/minute")
 @user_router.post("/api/v1/create_user", tags=['Users'])
-def create_user(users: UserRegistry):
+def create_user(request:Request, users: UserRegistry):
     db = Session()
     users.password = str(users.password)
     users.document = str(users.document)
@@ -157,9 +152,10 @@ def create_user(users: UserRegistry):
     finally:
         db.close()  
 
-
+@limiter.limit("20/minute")
 @user_router.get("/api/v1/all-persons", tags=['Users'])
 async def get_all_persons(
+    request:Request,
     page: int = Query(1, ge=1), 
     per_page: int = Query(5, ge=1,),
     token: TokenData = Depends(verify_token)
@@ -201,9 +197,9 @@ async def get_all_persons(
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
     
     
-    
+@limiter.limit("20/minute")
 @user_router.get("/api/v1/edit_user_by_person", tags=['Users'])
-async def edit_user_by_person(document: int, roll : int, token: TokenData = Depends(verify_token)):
+async def edit_user_by_person(request:Request, document: int, roll : int, token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         try:

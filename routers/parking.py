@@ -4,18 +4,19 @@ from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from jwt_manager import TokenData, verify_token
+from main import limiter
 from models.parking import Parking as ParkingModel
 from schemas.parking import Parking
 from fastapi import Depends, HTTPException, status
-
+from fastapi import Request
 
 
 
 parking_router = APIRouter()
 
-
+@limiter.limit("30/minute")
 @parking_router.post("/api/v1/parking-registration", tags=['parking'])
-async def create_parking(parking : Parking, token: TokenData = Depends(verify_token)):
+async def create_parking(request:Request, parking : Parking, token: TokenData = Depends(verify_token)):
     db = Session()
     parking.user_document = int(parking.user_document)
     
@@ -39,9 +40,9 @@ async def create_parking(parking : Parking, token: TokenData = Depends(verify_to
     finally:
         db.close()  
 
-
+@limiter.limit("30/minute")
 @parking_router.get("/api/v1/parking-all", tags=['parking'])
-async def get_all_parking(token: TokenData = Depends(verify_token)):
+async def get_all_parking(request:Request, token: TokenData = Depends(verify_token)):
     try:      
         db = Session()  
         parking = db.query(ParkingModel).all()
@@ -49,11 +50,11 @@ async def get_all_parking(token: TokenData = Depends(verify_token)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
     finally:
-        db.close()  
-    
-    
+        db.close()
+
+@limiter.limit("30/minute")
 @parking_router.get("/api/v1/parking-all-counter", tags=['parking'])
-async def get_all_parking_counter(token: TokenData = Depends(verify_token)):
+async def get_all_parking_counter(request:Request, token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         parking = db.query(ParkingModel).all()
@@ -61,6 +62,7 @@ async def get_all_parking_counter(token: TokenData = Depends(verify_token)):
         in_parking_motorcycle = 0
         in_parking_bycicle = 0
         out_of_parking_motorcycle = 0
+        out_of_parking_bycicle = 0
         parking_motocycle_capacity = 3
         parking_bycicle_capacity = 20
         percent_motorcycle_not_ocupation = 0
@@ -105,10 +107,11 @@ async def get_all_parking_counter(token: TokenData = Depends(verify_token)):
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
     finally:
         db.close()
-     
-    
+
+
+@limiter.limit("30/minute")
 @parking_router.get("/api/v1/parking-by-document/{user_document}", tags=['parking'])
-async def get_parking_by_document(user_document: int, token: TokenData = Depends(verify_token)):
+async def get_parking_by_document(request:Request, user_document: int, token: TokenData = Depends(verify_token)):
     try:      
         db = Session()  
         parking = db.query(ParkingModel).filter(ParkingModel.user_document == user_document).first()
@@ -118,9 +121,9 @@ async def get_parking_by_document(user_document: int, token: TokenData = Depends
     finally:
         db.close()  
 
-
+@limiter.limit("30/minute")
 @parking_router.put("/api/v1/parking-registration-update/{user_document}", tags=['parking'])
-async def update_parking(user_document: int, parking: Parking, token: TokenData = Depends(verify_token)):
+async def update_parking(request:Request, user_document: int, parking: Parking, token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         parking_record = db.query(ParkingModel).filter(ParkingModel.user_document == user_document).first()

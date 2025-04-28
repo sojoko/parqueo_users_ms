@@ -4,20 +4,21 @@ from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from jwt_manager import TokenData, verify_token
+from main import limiter
 from schemas.tickets import Tickets
 from models.tickets import Tickets as TicketsModel
 from models.aprendices import Aprendices as AprendizModel
 from models.users import User as UserModel
 from models.admins import Admins as AdminModel
 from models.vigilantes import Vigilantes as VigilanteModel
-
+from fastapi import Request
 
 
 tickets_route = APIRouter()
 
-
+@limiter.limit("20/minute")
 @tickets_route.post("/api/v1/tickets-registration", tags=['Tickets'])
-async def create_ticket(Tickets: Tickets, token: TokenData = Depends(verify_token)):
+async def create_ticket(request:Request, Tickets: Tickets, token: TokenData = Depends(verify_token)):
     db = Session()
     user = db.query(UserModel).filter(UserModel.document == Tickets.document).first() 
     try:       
@@ -44,9 +45,11 @@ async def create_ticket(Tickets: Tickets, token: TokenData = Depends(verify_toke
         db.close()  
 
 # -----------------------------------------------------------------------------------------
-    
+
+
+@limiter.limit("20/minute")
 @tickets_route.put("/api/v1/ticket-response/{id}", tags=['Tickets'])
-async def update_ticket(id: int, Tickets: Tickets,  token: TokenData = Depends(verify_token)):
+async def update_ticket(request:Request, id: int, Tickets: Tickets,  token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         ticket = db.query(TicketsModel).filter(TicketsModel.id == id).first()
@@ -67,9 +70,9 @@ async def update_ticket(id: int, Tickets: Tickets,  token: TokenData = Depends(v
         db.close()
 
 #   --------------------------------------------------------------------------------------------    
-
+@limiter.limit("20/minute")
 @tickets_route.get("/api/v1/Tickets", tags=['Tickets'])
-def get_tickets(token: TokenData = Depends(verify_token)):
+def get_tickets(request:Request, token: TokenData = Depends(verify_token)):
     db = Session()
     tickets = db.query(TicketsModel).all()
     ticket_data = []
@@ -121,9 +124,9 @@ def get_tickets(token: TokenData = Depends(verify_token)):
 
 
 # ----------------------------------------------------------------------------------------------------
-
+@limiter.limit("20/minute")
 @tickets_route.get("/api/v1/Tickets-by-user/{doc}", tags=['Tickets'])
-def get_tickets_by_user(doc: int, token: TokenData = Depends(verify_token)):
+def get_tickets_by_user(request:Request, doc: int, token: TokenData = Depends(verify_token)):
     db = Session()
     tickets = db.query(TicketsModel).filter(TicketsModel.document == doc)
     ticket_data = []
@@ -143,7 +146,7 @@ def get_tickets_by_user(doc: int, token: TokenData = Depends(verify_token)):
 # ----------------------------------------------------------------------------------------------------
 
 @tickets_route.get("/api/v1/Ticket/id/{id}", tags=['Tickets'])
-def get_ticket_by_id(id: int, token: TokenData = Depends(verify_token)):
+def get_ticket_by_id(request:Request, id: int, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         ticket = db.query(TicketsModel).filter(TicketsModel.id == id).first()        

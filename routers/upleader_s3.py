@@ -1,23 +1,22 @@
 from fastapi import APIRouter, HTTPException, File, UploadFile
-from datetime import datetime, timedelta
-from config.database import engine, Base, Session
+
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
-from jwt_manager import TokenData, verify_token
-from models.admins import Admins as AdminModel
-from schemas.admins import Admins
 from fastapi import Depends, HTTPException, status
 import boto3
 import dotenv
 import os
+from fastapi import Request
+
+from main import limiter
 
 dotenv.load_dotenv()
 s3_cliente = boto3.client('s3', aws_access_key_id = str(os.getenv("AWS_ACCESS_KEY")), aws_secret_access_key = str(os.getenv("AWS_SECRET_KEY")))
 upload_to_s3_route = APIRouter()
 
-
+@limiter.limit("20/minute")
 @upload_to_s3_route.post("/api/v1/upload_img_s3", tags=['upload_img_s3'])
-async def upload_img_to_s3(image: UploadFile = File(...)):
+async def upload_img_to_s3(request:Request, image: UploadFile = File(...)):
 
     bucket_url = os.getenv("AWS_BUCKET_CLOUDFRONT")
     try:

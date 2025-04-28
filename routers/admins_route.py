@@ -4,9 +4,11 @@ from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from jwt_manager import TokenData, verify_token
+from main import limiter
 from models.admins import Admins as AdminModel
 from schemas.admins import Admins
 from fastapi import Depends, HTTPException, status
+from fastapi import Request
 
 
 
@@ -14,8 +16,9 @@ from fastapi import Depends, HTTPException, status
 admins_router = APIRouter()
 
 
+@limiter.limit("20/minute")
 @admins_router.post("/api/v1/admins-registration", tags=['admins'])
-async def create_admin(admins : Admins, token: TokenData = Depends(verify_token)):
+async def create_admin(request: Request, admins : Admins, token: TokenData = Depends(verify_token)):
     db = Session()
     admins.document = int(admins.document)
     
@@ -39,10 +42,10 @@ async def create_admin(admins : Admins, token: TokenData = Depends(verify_token)
     finally:
         db.close() 
 
-
+@limiter.limit("20/minute")
 @admins_router.get("/api/v1/admins-all", tags=['admins'])
-async def get_all_admins(token: TokenData = Depends(verify_token)):
-    try:      
+async def get_all_admins(request: Request, token: TokenData = Depends(verify_token)):
+    try:
         db = Session()  
         admins = db.query(AdminModel).all()
         return JSONResponse(status_code=200, content=jsonable_encoder(admins))
@@ -52,9 +55,9 @@ async def get_all_admins(token: TokenData = Depends(verify_token)):
         db.close() 
 
 
-
+@limiter.limit("20/minute")
 @admins_router.put("/api/v1/admins-update/{document}", tags=['admins'])
-async def update_admin(document: int, admins: Admins, token: TokenData = Depends(verify_token)):
+async def update_admin(request: Request, document: int, admins: Admins, token: TokenData = Depends(verify_token)):
     db = Session()
     try:
         # Buscar el administrador por el documento

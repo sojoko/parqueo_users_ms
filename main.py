@@ -1,13 +1,8 @@
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
-from fastapi import FastAPI, Request
-from slowapi import Limiter
-from slowapi.middleware import SlowAPIMiddleware
-from slowapi.errors import RateLimitExceeded
-from starlette.responses import JSONResponse
-
+from fastapi import FastAPI, Depends
 from config.database import engine, Base
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from routers.qr_route import qr_router
 from routers.aprendices_route import aprendices_router
 from routers.users_route import user_router
@@ -18,14 +13,19 @@ from routers.tickets_route import tickets_route
 from routers.upleader_s3 import upload_to_s3_route
 from routers.parking import parking_router
 from fastapi.openapi.utils import get_openapi
-
-app = FastAPI()
-app.title = "Parqueo API"
-app.version = "0.0.1"
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
+from fastapi import Request
 
 limiter = Limiter(key_func=lambda request: request.client.host)
-
+app = FastAPI()
+app.title = "Parqueo API"
+app.version = "0.0.3"
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,16 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.state.limiter = limiter
-
-@app.exception_handler(RateLimitExceeded)
-def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return JSONResponse(
-        status_code=429,
-        content={"detail": "Too many requests. Please try again later."},
-    )
-
-limiter.limit("10/minute")(app)
 app.include_router(qr_router)
 app.include_router(aprendices_router)
 app.include_router(user_router)
@@ -55,8 +45,10 @@ app.include_router(tickets_route)
 app.include_router(upload_to_s3_route)
 app.include_router(parking_router)
 
+@limiter.limit("10/minute")
 @app.get("/")
-def read_root():
+@limiter.limit("10/minute")
+async def read_root(request: Request):
     return {"message": "PARQUEO API"}
 
 def custom_openapi():
@@ -79,9 +71,10 @@ def custom_openapi():
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
-
 app.openapi = custom_openapi
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
+
+
 
 Base.metadata.create_all(bind=engine)
