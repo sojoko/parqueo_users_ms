@@ -37,7 +37,7 @@ def create_qr(request:Request, qr: QR, document: int, token: TokenData = Depends
 
         if diferencia < time_limit:
             return JSONResponse(status_code=200, content=jsonable_encoder(last_qr_image_decode))
-    
+    #hera change the qr code
     date_request = f'https://parqueo.sojoj.com/aprendiz-info?document={document}'
     qr_binary = b64decode(qr_generator(date_request=date_request))
     qr.qr = qr_binary
