@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 import httpx
+from fastapi.security import OAuth2PasswordBearer
+
 from jwt_manager import TokenData, verify_token
 from utils.rate_limiter import limiter
 from models.qr import QR as QRModel
@@ -16,7 +18,7 @@ import matplotlib.pyplot as plt
 import tempfile
 from fastapi import Request
 
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
 qr_router = APIRouter()
 
 @limiter.limit("20/minute")
@@ -57,10 +59,16 @@ def create_qr(request:Request, qr: QR, document: int, token: TokenData = Depends
 
 @limiter.limit("20/minute")
 @qr_router.get("/api/v1/generate-report", tags=['Report'], response_class=FileResponse)
-async def generate_report(request:Request):
+async def generate_report(request: Request, token: str = Depends(oauth2_scheme)):
     try:
         async with httpx.AsyncClient(verify=False) as client:
-            response = await client.get('https://parqueo-api.sojoj.com/api/v1/parking-all-counter')
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = await client.get(
+                'https://parqueo-api.sojoj.com/api/v1/parking-all-counter',
+                headers=headers
+            )
             response.raise_for_status()
             data = response.json()
 
