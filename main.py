@@ -1,8 +1,13 @@
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from slowapi import Limiter
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
+from starlette.responses import JSONResponse
+
 from config.database import engine, Base
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from routers.qr_route import qr_router
 from routers.aprendices_route import aprendices_router
 from routers.users_route import user_router
@@ -18,14 +23,28 @@ app = FastAPI()
 app.title = "Parqueo API"
 app.version = "0.0.1"
 
+limiter = Limiter(key_func=lambda request: request.client.host)
+
+app.add_middleware(SlowAPIMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://parqueo-frt.pages.dev", "https://parqueo-frt.pages.dev/"], 
+    allow_origins=["http://localhost:3000", "https://parqueo-frt.pages.dev", "https://parqueo-frt.pages.dev/"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],  
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please try again later."},
+    )
+
+limiter.limit("10/minute")(app)
 app.include_router(qr_router)
 app.include_router(aprendices_router)
 app.include_router(user_router)
@@ -60,10 +79,9 @@ def custom_openapi():
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
+
 app.openapi = custom_openapi
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
-
-
 
 Base.metadata.create_all(bind=engine)
