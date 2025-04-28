@@ -24,7 +24,7 @@ import os
 dotenv.load_dotenv()
 
 if os.getenv("ENV") == "production":
-    allow_origin = ["https://parqueo.sojoj.com/"]
+    allow_origin = ["https://parqueo.sojoj.com/", "https://parqueo.sojoj.com"]
 else:
     allow_origin = ["http://localhost:3000", "https://parqueo.sojoj.com/", "https://parqueo-frt.pages.dev/"]
 
