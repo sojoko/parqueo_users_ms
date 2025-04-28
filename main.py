@@ -18,8 +18,15 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from fastapi import Request
 from utils.rate_limiter import limiter
+import dotenv
+import os
 
+dotenv.load_dotenv()
 
+if os.getenv("ENV") == "production":
+    allow_origin = ["https://parqueo.sojoj.com/"]
+else:
+    allow_origin = ["http://localhost:3000", "https://parqueo.sojoj.com/", "https://parqueo-frt.pages.dev/"]
 
 app = FastAPI()
 app.title = "Parqueo API"
@@ -28,9 +35,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://parqueo-frt.pages.dev", "https://parqueo-frt.pages.dev/"],
+    allow_origins=allow_origin,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
