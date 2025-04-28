@@ -38,7 +38,7 @@ def create_qr(request:Request, qr: QR, document: int, token: TokenData = Depends
         if diferencia < time_limit:
             return JSONResponse(status_code=200, content=jsonable_encoder(last_qr_image_decode))
     
-    date_request = f'https://parqueo-frt.pages.dev/aprendiz-info?document={document}'
+    date_request = f'https://parqueo.sojoj.com/aprendiz-info?document={document}'
     qr_binary = b64decode(qr_generator(date_request=date_request))
     qr.qr = qr_binary
     qr.user_document = document
@@ -60,7 +60,7 @@ def create_qr(request:Request, qr: QR, document: int, token: TokenData = Depends
 async def generate_report(request:Request):
     try:
         async with httpx.AsyncClient(verify=False) as client:
-            response = await client.get('https://parqueousersms-production.up.railway.app:8000/api/v1/parking-all-counter')
+            response = await client.get('https://parqueo-api.sojoj.com/api/v1/parking-all-counter')
             response.raise_for_status()
             data = response.json()
 
