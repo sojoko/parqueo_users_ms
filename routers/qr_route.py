@@ -58,7 +58,7 @@ def create_qr(request:Request, qr: QR, document: int, token: TokenData = Depends
 
 @limiter.limit("20/minute")
 @qr_router.get("/api/v1/generate-report", tags=['Report'], response_class=FileResponse)
-async def generate_report(request:Request):
+async def generate_report(request:Request, token: TokenData = Depends(verify_token)):
     try:
         db = Session()
         parking = db.query(ParkingModel).all()
