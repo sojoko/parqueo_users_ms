@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 import httpx
-from fastapi.security import OAuth2PasswordBearer
-
 from jwt_manager import TokenData, verify_token
 from utils.rate_limiter import limiter
 from models.qr import QR as QRModel
@@ -17,8 +15,9 @@ from reportlab.pdfgen import canvas
 import matplotlib.pyplot as plt
 import tempfile
 from fastapi import Request
+from models.parking import Parking as ParkingModel
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
+
 qr_router = APIRouter()
 
 @limiter.limit("20/minute")
@@ -59,18 +58,39 @@ def create_qr(request:Request, qr: QR, document: int, token: TokenData = Depends
 
 @limiter.limit("20/minute")
 @qr_router.get("/api/v1/generate-report", tags=['Report'], response_class=FileResponse)
-async def generate_report(request: Request, token: str = Depends(oauth2_scheme)):
+async def generate_report(request:Request):
     try:
-        async with httpx.AsyncClient(verify=False) as client:
-            headers = {
-                "Authorization": f"Bearer {token}"
-            }
-            response = await client.get(
-                'https://parqueo-api.sojoj.com/api/v1/parking-all-counter',
-                headers=headers
-            )
-            response.raise_for_status()
-            data = response.json()
+        db = Session()
+        parking = db.query(ParkingModel).all()
+
+        in_parking_motorcycle = 0
+        in_parking_bycicle = 0
+        out_of_parking_motorcycle = 0
+        out_of_parking_bycicle = 0
+        parking_motocycle_capacity = 3
+        parking_bycicle_capacity = 20
+        percent_motorcycle_not_ocupation = 0
+        percent_motorcycle_ocupation = 0
+        percent_bycicle_ocupation = 0
+        percent_bycicle_not_ocupation = 0
+
+        for doc in parking:
+            if doc.vehicle_type == 1 and doc.is_in_parking == 1:
+                in_parking_motorcycle += 1
+            elif doc.vehicle_type == 1 and doc.is_in_parking == 0:
+                out_of_parking_motorcycle += 1
+            elif doc.vehicle_type == 2 and doc.is_in_parking == 1:
+                in_parking_bycicle += 1
+            elif doc.vehicle_type == 2 and doc.is_in_parking == 0:
+                out_of_parking_bycicle += 1
+
+        parking_actually_motorcycle_capacity = parking_motocycle_capacity - in_parking_motorcycle
+        parking_actually_bycicle_capacity = parking_bycicle_capacity - in_parking_bycicle
+
+        percent_motorcycle_ocupation = (in_parking_motorcycle * 100) / parking_motocycle_capacity
+        percent_motorcycle_not_ocupation = 100 - percent_motorcycle_ocupation
+        percent_bycicle_ocupation = (in_parking_bycicle * 100) / parking_bycicle_capacity
+        percent_bycicle_not_ocupation = 100 - percent_bycicle_ocupation
 
         pdf_file = "report.pdf"
         c = canvas.Canvas(pdf_file, pagesize=letter)
@@ -84,26 +104,26 @@ async def generate_report(request: Request, token: str = Depends(oauth2_scheme))
 
         c.setFont("Helvetica", 14)
         c.setFillColorRGB(0, 0, 0)
-        c.drawString(100, height - 100, f"Capacidad total para motocicletas: {data['capacity_motorcycle']}")
-        c.drawString(100, height - 120, f"Motocicletas actuales en el parqueadero: {data['motocycle_in_parking']}")
-        c.drawString(100, height - 140, f"Parqueaderos disponibles para motocicletas: {data['actually_motorcycle_capacity']}")
+        c.drawString(100, height - 100, f"Capacidad total para motocicletas: {parking_motocycle_capacity}")
+        c.drawString(100, height - 120, f"Motocicletas actuales en el parqueadero: {in_parking_motorcycle}")
+        c.drawString(100, height - 140, f"Parqueaderos disponibles para motocicletas: {parking_actually_motorcycle_capacity}")
        
 
         c.setFillColorRGB(0, 0, 0)     
         c.setFont("Helvetica-Bold", 14) 
-        c.drawString(100, height - 160, f"Porcentaje de ocupacion de motocicletas: {data['percent_motorcycle_ocupation']:.2f}%")
-        if data['percent_motorcycle_not_ocupation'] < 1:
+        c.drawString(100, height - 160, f"Porcentaje de ocupacion de motocicletas: {percent_motorcycle_ocupation:.2f}%")
+        if percent_motorcycle_not_ocupation < 1:
             c.setFillColorRGB(1, 0, 0)
             c.setFont("Helvetica-Bold", 14) 
-            c.drawString(100, height - 180, f"Porcentaje de disponibiliad para motocicletas: {data['percent_motorcycle_not_ocupation']:.2f}%")
-        elif data['percent_motorcycle_not_ocupation'] >= 1 and data['percent_motorcycle_not_ocupation'] < 35:
+            c.drawString(100, height - 180, f"Porcentaje de disponibiliad para motocicletas: {percent_motorcycle_not_ocupation:.2f}%")
+        elif 1 <= percent_motorcycle_not_ocupation < 35:
             c.setFillColorRGB(1.0, 0.365, 0.0)
             c.setFont("Helvetica-Bold", 14) 
-            c.drawString(100, height - 180, f"Porcentaje de disponibiliad para motocicletas: {data['percent_motorcycle_not_ocupation']:.2f}%")
-        elif data['percent_motorcycle_not_ocupation'] >= 35:
+            c.drawString(100, height - 180, f"Porcentaje de disponibiliad para motocicletas: {percent_motorcycle_not_ocupation:.2f}%")
+        elif percent_motorcycle_not_ocupation >= 35:
             c.setFillColorRGB(0.0, 0.678, 0.196)
             c.setFont("Helvetica-Bold", 14) 
-            c.drawString(100, height - 180, f"Porcentaje de disponibiliad para motocicletas: {data['percent_motorcycle_not_ocupation']:.2f}%") 
+            c.drawString(100, height - 180, f"Porcentaje de disponibiliad para motocicletas: {percent_motorcycle_not_ocupation:.2f}%")
        
        
         c.setFont("Helvetica-Bold", 14)       
@@ -111,26 +131,26 @@ async def generate_report(request: Request, token: str = Depends(oauth2_scheme))
         c.drawString(100, height - 220, f"Resumen bicicletas")         
         c.setFont("Helvetica", 14)
         c.setFillColorRGB(0, 0, 0)
-        c.drawString(100, height - 240, f"Capacidad total para bicicletas: {data['capacity_bycicle']}")       
-        c.drawString(100, height - 260, f"Bicicletas actuales en el parqueadero: {data['bycicle_in_parking']}")
-        c.drawString(100, height - 280, f"Parqueaderos disponibles para bicicletas: {data['actually_bycicle_capacity']}")      
+        c.drawString(100, height - 240, f"Capacidad total para bicicletas: {parking_bycicle_capacity}")
+        c.drawString(100, height - 260, f"Bicicletas actuales en el parqueadero: {in_parking_bycicle}")
+        c.drawString(100, height - 280, f"Parqueaderos disponibles para bicicletas: {parking_actually_bycicle_capacity}")
         
         c.setFillColorRGB(0, 0, 0)     
         c.setFont("Helvetica-Bold", 14)        
-        c.drawString(100, height - 300, f"Porcentaje de ocupacion para bicicletas: {data['percent_bycicle_ocupation']:.2f}%")
+        c.drawString(100, height - 300, f"Porcentaje de ocupacion para bicicletas: {percent_bycicle_ocupation:.2f}%")
         
-        if data['percent_bycicle_not_ocupation'] < 1:
+        if percent_bycicle_not_ocupation < 1:
             c.setFillColorRGB(1, 0, 0)
             c.setFont("Helvetica-Bold", 14) 
-            c.drawString(100, height - 320, f"Portencaje de disponibilidad para bicicletas: {data['percent_bycicle_not_ocupation']:.2f}%")
-        elif data['percent_bycicle_not_ocupation'] >= 1 and data['percent_bycicle_not_ocupation'] < 35:
+            c.drawString(100, height - 320, f"Portencaje de disponibilidad para bicicletas: {percent_bycicle_not_ocupation:.2f}%")
+        elif 1 <= percent_bycicle_not_ocupation < 35:
             c.setFillColorRGB(1.0, 0.365, 0.0)
             c.setFont("Helvetica-Bold", 14) 
-            c.drawString(100, height - 320, f"Portencaje de disponibilidad para bicicletas: {data['percent_bycicle_not_ocupation']:.2f}%")
-        elif data['percent_bycicle_not_ocupation'] >= 35:
+            c.drawString(100, height - 320, f"Portencaje de disponibilidad para bicicletas: {percent_bycicle_not_ocupation:.2f}%")
+        elif percent_bycicle_not_ocupation >= 35:
             c.setFillColorRGB(0.0, 0.678, 0.196)
             c.setFont("Helvetica-Bold", 14) 
-            c.drawString(100, height - 320, f"Portencaje de disponibilidad para bicicletas: {data['percent_bycicle_not_ocupation']:.2f}%")
+            c.drawString(100, height - 320, f"Portencaje de disponibilidad para bicicletas: {percent_bycicle_not_ocupation:.2f}%")
        
 
         def create_chart(data, labels, title):
@@ -143,11 +163,11 @@ async def generate_report(request: Request, token: str = Depends(oauth2_scheme))
             plt.close(fig)
             return temp_file.name
 
-        moto_data = [data['percent_motorcycle_ocupation'], data['percent_motorcycle_not_ocupation']]
+        moto_data = [percent_motorcycle_ocupation, percent_motorcycle_not_ocupation]
         moto_labels = ['Plazas ocupadas', 'Plazas disponibles']
         moto_chart = create_chart(moto_data, moto_labels, 'Ocupacion de motocicletas')
 
-        bike_data = [data['percent_bycicle_ocupation'], data['percent_bycicle_not_ocupation']]
+        bike_data = [percent_bycicle_ocupation, percent_bycicle_not_ocupation ]
         bike_labels = ['Plazas ocupadas', 'Plazas disponibles']
         bike_chart = create_chart(bike_data, bike_labels, 'Ocupacion de bicicletas')
 
@@ -162,4 +182,6 @@ async def generate_report(request: Request, token: str = Depends(oauth2_scheme))
         raise HTTPException(status_code=exc.response.status_code, detail=f"Error fetching data: {exc.response.text}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating report: {str(e)}")
+    finally:
+        db.close()
    
