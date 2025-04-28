@@ -4,7 +4,7 @@ from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from jwt_manager import TokenData, verify_token
-from main import limiter
+from utils.rate_limiter import limiter
 from models.admins import Admins as AdminModel
 from schemas.admins import Admins
 from fastapi import Depends, HTTPException, status

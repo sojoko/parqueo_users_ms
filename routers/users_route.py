@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from main import limiter
+from utils.rate_limiter import limiter
 from models.users import User as UserModel
 from schemas.usersLogin import User
 from schemas.usersRegistry import UserRegistry

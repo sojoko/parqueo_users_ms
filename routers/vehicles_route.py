@@ -4,7 +4,7 @@ from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from jwt_manager import TokenData, verify_token
-from main import limiter
+from utils.rate_limiter import limiter
 from models.vehicles import Motocicleta as MotoModel
 from schemas.vehicles import Motocicletas
 from models.vehicles import Bicicleta as BiciModel
@@ -102,7 +102,7 @@ def get_vehicle_by_user_document(request:Request, document: int, token: TokenDat
     
     except HTTPException as http_exc:  
         raise http_exc
-    except Exception as e:  
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
     finally:
         db.close()

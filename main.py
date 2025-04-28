@@ -17,15 +17,16 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from fastapi import Request
+from utils.rate_limiter import limiter
 
-limiter = Limiter(key_func=lambda request: request.client.host)
+
+
 app = FastAPI()
 app.title = "Parqueo API"
 app.version = "0.0.3"
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
-
 
 app.add_middleware(
     CORSMiddleware,

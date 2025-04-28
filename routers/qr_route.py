@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 import httpx
 from jwt_manager import TokenData, verify_token
+from utils.rate_limiter import limiter
 from models.qr import QR as QRModel
 from schemas.qr import QR 
 from qr import qr_generator

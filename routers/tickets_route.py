@@ -4,7 +4,7 @@ from config.database import engine, Base, Session
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from jwt_manager import TokenData, verify_token
-from main import limiter
+from utils.rate_limiter import limiter
 from schemas.tickets import Tickets
 from models.tickets import Tickets as TicketsModel
 from models.aprendices import Aprendices as AprendizModel
