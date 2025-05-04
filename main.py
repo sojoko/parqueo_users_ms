@@ -3,32 +3,35 @@ from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, Depends
 from config.database import engine, Base
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from routers.qr_route import qr_router
-from routers.aprendices_route import aprendices_router
-from routers.users_route import user_router
-from routers.vigilante_route import vigilante_router
-from routers.admins_route import admins_router
-from routers.vehicles_route import vehicle_router
-from routers.tickets_route import tickets_route
-from routers.upleader_s3 import upload_to_s3_route
-from routers.parking import parking_router
+from routes.qr_route import qr_router
+from routes.aprendices_route import aprendices_router
+from routes.users_route import user_router
+from routes.vigilante_route import vigilante_router
+from routes.admins_route import admins_router
+from routes.vehicles_route import vehicle_router
+from routes.tickets_route import tickets_route
+from routes.upleader_s3 import upload_to_s3_route
+from routes.parking import parking_router
 from fastapi.openapi.utils import get_openapi
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from fastapi import Request
 from utils.rate_limiter import limiter
+from Auth.hmac_sign import authenticate_api_key
 import dotenv
 import os
 
 dotenv.load_dotenv()
+
+
 
 if os.getenv("ENVIRONMENT") == "production":
     allow_origin = ["https://parqueo.sojoj.com/", "https://parqueo.sojoj.com"]
 else:
     allow_origin = ["http://localhost:3000", "https://parqueo.sojoj.com/", "https://parqueo-frt.pages.dev/"]
 
-app = FastAPI()
+app = FastAPI(dependencies=[Depends(authenticate_api_key)])
 app.title = "Parqueo API"
 app.version = "0.0.3"
 app.state.limiter = limiter
@@ -74,9 +77,15 @@ def custom_openapi():
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
+        },
+        "HMACAuthentication": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "x-api-key",
+            "description": "API Key for HMAC authentication. Also requires x-timestamp and x-signature headers."
         }
     }
-    openapi_schema["security"] = [{"OAuth2PasswordBearer": []}]
+    openapi_schema["security"] = [{"OAuth2PasswordBearer": []}, {"HMACAuthentication": []}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 

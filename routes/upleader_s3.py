@@ -22,7 +22,7 @@ async def upload_img_to_s3(request:Request, image: UploadFile = File(...)):
     try:
         object_name = image.filename     
         image_data = await image.read()
-        public_url = f"{bucket_url}{object_name}"
+        public_url = f"https://{bucket_url}/{object_name}"
         s3_cliente.put_object(Body=image_data, Bucket="parqueo-assets2", Key=object_name)
         return JSONResponse(status_code=200, content=jsonable_encoder({"message": "Imagen subida correctamente", "url": public_url}))
     except Exception as e:        
