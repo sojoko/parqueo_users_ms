@@ -19,7 +19,7 @@ class AdminRepository:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
         finally:
             db.close()
-    
+
     def get_all_admins(self):
         db = Session()
         try:
@@ -29,7 +29,7 @@ class AdminRepository:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
         finally:
             db.close()
-    
+
     def update_admin(self, document: int, admin_data: dict):
         db = Session()
         try:
@@ -39,11 +39,41 @@ class AdminRepository:
 
             for key, value in admin_data.items():
                 setattr(admin, key, value)
-            
+
             db.commit()
             return True
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+        finally:
+            db.close()
+
+    def get_admin_by_id(self, id: int):
+        db = Session()
+        try:
+            admin = db.query(AdminModel).filter(AdminModel.id == id).first()
+            if not admin:
+                return None
+
+            return admin
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+        finally:
+            db.close()
+
+    def change_admin_status(self, admin_id: int, status_id: int):
+        db = Session()
+        try:
+            admin = db.query(AdminModel).filter(AdminModel.id == admin_id).first()
+
+            if not admin:
+                return False
+
+            admin.status_id = status_id
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
         finally:
             db.close()

@@ -13,7 +13,7 @@ class AprendicesService:
     def create_aprendiz(self, aprendices: Aprendices):
         try:
             finish_date = datetime.strptime(aprendices.finish_date, "%Y-%m-%d")        
-            status_default = 1
+            status_default = 4
             aprendices.document = int(aprendices.document)
             aprendices.ficha = int(aprendices.ficha)
 
@@ -25,7 +25,7 @@ class AprendicesService:
                 "photo": aprendices.photo,
                 "email": aprendices.email,     
                 "finish_date": finish_date,
-                "state_id": status_default
+                "status_id": status_default
             }
 
             success = self.repository.create_aprendiz(aprendiz_data)
@@ -85,6 +85,19 @@ class AprendicesService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
+    def get_aprendiz_status_v2(self, page: int, per_page: int):
+        try:
+            result = self.repository.get_aprendiz_status_v2(page, per_page)
+
+            if not result.get("items"):
+                raise HTTPException(status_code=404, detail="No hay aprendices con los estados especificados en esta página")
+
+            return result
+        except HTTPException as http_exc:
+            raise http_exc
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+
     def get_aprendiz_with_vehicles(self, document: int):
         try:
             response_data = self.repository.get_aprendiz_with_vehicles(document)
@@ -94,13 +107,13 @@ class AprendicesService:
 
     def change_aprendiz_status(self, req: ChangeStatusRequest):
         try:
-            document = int(req.document)
-            state_id = int(req.state_id)
+            aprendiz_id = int(req.id)
+            status_id = int(req.status_id)
 
-            success = self.repository.change_aprendiz_status(document, state_id)
+            success = self.repository.change_aprendiz_status(aprendiz_id, status_id)
 
             if not success:
-                raise HTTPException(status_code=404, detail="El documento no fue encontrado")
+                raise HTTPException(status_code=404, detail="El aprendiz no fue encontrado")
 
             return {"message": "El estado del aprendiz fue actualizado correctamente"}
         except HTTPException as http_exc:
@@ -108,7 +121,7 @@ class AprendicesService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
-    def update_aprendiz(self, document: int, aprendices: Aprendices):
+    def update_aprendiz(self, aprendiz_id: int, aprendices: Aprendices):
         try:
             aprendiz_data = {}
             if aprendices.name:
@@ -122,7 +135,7 @@ class AprendicesService:
             if aprendices.email:
                 aprendiz_data["email"] = aprendices.email
 
-            success = self.repository.update_aprendiz(document, aprendiz_data)
+            success = self.repository.update_aprendiz(aprendiz_id, aprendiz_data)
 
             if not success:
                 raise HTTPException(status_code=404, detail="Aprendiz no encontrado")

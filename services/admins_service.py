@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from schemas.admins import Admins
+from schemas.admins import Admins, ChangeStatusRequest
 from repository.admin_repository import AdminRepository
 
 class AdminsService:
@@ -53,6 +53,38 @@ class AdminsService:
                 raise HTTPException(status_code=404, detail="Administrador no encontrado")
 
             return {"message": "El usuario administrador fue actualizado correctamente"}
+        except HTTPException as http_exc:
+            raise http_exc
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+
+    def get_admin_by_id(self, id: int):
+        try:
+            admin = self.repository.get_admin_by_id(id)
+
+            if admin is None:
+                raise HTTPException(status_code=404, detail="Administrador no encontrado")
+
+            user_dict = admin.__dict__
+            user_dict['roll'] = "admin"
+
+            return user_dict
+        except HTTPException as http_exc:
+            raise http_exc
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+
+    def change_admin_status(self, req: ChangeStatusRequest):
+        try:
+            admin_id = int(req.id)
+            status_id = int(req.status_id)
+
+            success = self.repository.change_admin_status(admin_id, status_id)
+
+            if not success:
+                raise HTTPException(status_code=404, detail="El administrador no fue encontrado")
+
+            return {"message": "El estado del administrador fue actualizado correctamente"}
         except HTTPException as http_exc:
             raise http_exc
         except Exception as e:

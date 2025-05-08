@@ -10,6 +10,10 @@ class Vigilantes(Base):
     last_name = Column(String(50))
     document = Column(Integer)   
     registry_date = Column(DateTime, default=datetime.now())
+    status_id = Column(Integer, ForeignKey("status_vigilante.id"))
   
-    
-     
+class VigilanteStatus(Base):
+    __tablename__ = 'status_vigilante'
+
+    id = Column(Integer, primary_key=True)
+    status = Column(String(50))

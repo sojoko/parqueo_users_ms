@@ -28,5 +28,5 @@ class Aprendices(BaseModel):
 
 
 class ChangeStatusRequest(BaseModel):
-    document: int
-    state_id: int
+    id: int
+    status_id: int

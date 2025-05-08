@@ -7,6 +7,7 @@ class Vigilantes(BaseModel):
     last_name: str = Field(..., description="Apellido del vigilante")
     document: int = Field(..., description="Documento del vigilante") 
     registry_date: Optional[str] = Field(None, description="Fecha de registro del vigilante")
+    status: Optional[int] = Field(None, description="Estado del vigilante")
 
 
 
@@ -17,7 +18,12 @@ class Vigilantes(BaseModel):
                 "name": "Jonhathan",
                 "last_name": "Sojo",
                 "document": "123456789",
-                "email": "admin@parqueo,com",                        
-                
+                "email": "admin@parqueo,com",
+
             }
         }
+
+
+class ChangeStatusRequest(BaseModel):
+    id: int
+    status_id: int

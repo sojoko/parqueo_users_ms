@@ -14,7 +14,7 @@ class Aprendices(Base):
     photo = Column(String(100))
     registry_date = Column(DateTime, default=datetime.now)
     finish_date = Column(DateTime)
-    state_id = Column(Integer, ForeignKey('status_aprendiz.id'))
+    status_id = Column(Integer, ForeignKey('status_aprendiz.id'))
 
 class EstadoAprendiz(Base):
     __tablename__ = 'status_aprendiz'

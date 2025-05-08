@@ -15,7 +15,7 @@ class AprendizRepository:
             aprendices_with_roll = []
             for user in aprendinces:
                 user_dict = user.__dict__
-                user_dict['roll'] = "aprendiz"
+                user_dict['role_id'] = 2
                 aprendices_with_roll.append(user_dict)
             return aprendices_with_roll
         finally:
@@ -42,7 +42,10 @@ class AprendizRepository:
         db = Session()
         try:      
             aprendiz_by_id = db.query(AprendizModel).filter(AprendizModel.id == id).first()       
-            return aprendiz_by_id
+            user_dict = aprendiz_by_id.__dict__ if aprendiz_by_id else None
+            if user_dict:
+                user_dict['role_id'] = 2
+            return user_dict
         except Exception as e:        
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
         finally:
@@ -65,7 +68,7 @@ class AprendizRepository:
             if not aprendiz:
                 return None
                 
-            aprendiz_status_id = aprendiz.state_id 
+            aprendiz_status_id = aprendiz.status_id
             status = db.query(EstadoAprendiz).filter(EstadoAprendiz.id == aprendiz_status_id).first()        
             return status.estado if status else None
         except Exception as e:     
@@ -128,15 +131,15 @@ class AprendizRepository:
         finally:
             db.close()
     
-    def change_aprendiz_status(self, document: int, state_id: int):
+    def change_aprendiz_status(self, admin_id: int, status_id: int):
         db = Session()
         try:
-            aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()
+            aprendiz = db.query(AprendizModel).filter(AprendizModel.id == admin_id).first()
             
             if not aprendiz:
                 return False
             
-            aprendiz.state_id = state_id
+            aprendiz.status_id = status_id
             db.commit()
             return True
         except Exception as e:
@@ -145,10 +148,11 @@ class AprendizRepository:
         finally:
             db.close()
     
-    def update_aprendiz(self, document: int, aprendiz_data: dict):
+    def update_aprendiz(self, aprendiz_id: int, aprendiz_data: dict):
         db = Session()
         try:
-            aprendiz = db.query(AprendizModel).filter(AprendizModel.document == document).first()        
+            aprendiz = db.query(AprendizModel).filter(AprendizModel.id == aprendiz_id).first()
+            print(aprendiz)
             if not aprendiz:
                 return False
                 
@@ -159,6 +163,89 @@ class AprendizRepository:
             return True
         except Exception as e:
             db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+        finally:
+            db.close()
+    
+    def get_aprendiz_status_v2(self, page: int, per_page: int):
+        db = Session()
+        try:
+            # Filtrar solo aprendices con status_id 4, 5 o 6
+            valid_status_ids = [4, 5, 6]
+            # Obtener el total de items que cumplen el criterio para calcular paginación
+            total_items = db.query(AprendizModel).filter(AprendizModel.status_id.in_(valid_status_ids)).count()
+            
+            # Calcular offsets para paginación directamente en la base de datos
+            offset = (page - 1) * per_page
+            
+            # Obtener solo los aprendices de la página actual con los status_id especificados
+            aprendices = db.query(AprendizModel).filter(
+                AprendizModel.status_id.in_(valid_status_ids)
+            ).order_by(AprendizModel.id).offset(offset).limit(per_page).all()
+            
+            # Recopilar los documentos de los aprendices para buscar sus vehículos
+            aprendiz_documents = [aprendiz.document for aprendiz in aprendices]
+            
+            # Obtener motocicletas y bicicletas solo para los aprendices en la página actual
+            motocicletas = db.query(MotocicletaModel).filter(
+                MotocicletaModel.user_document.in_(aprendiz_documents)
+            ).all() if aprendiz_documents else []
+            
+            bicicletas = db.query(BicicletaModel).filter(
+                BicicletaModel.user_document.in_(aprendiz_documents)
+            ).all() if aprendiz_documents else []
+            
+            # Mapa de vehículos por documento de usuario
+            moto_map = {moto.user_document: moto for moto in motocicletas}
+            bici_map = {bici.user_document: bici for bici in bicicletas}
+            
+            # Preparar los resultados incluyendo los vehículos
+            aprendices_result = []
+            for aprendiz in aprendices:
+                aprendiz_dict = aprendiz.__dict__.copy()
+                
+                # Obtener el estado del aprendiz
+                estado = db.query(EstadoAprendiz).filter(EstadoAprendiz.id == aprendiz.status_id).first()
+                aprendiz_dict['estado'] = estado.estado if estado else None
+                
+                # Añadir vehículos
+                aprendiz_dict['vehicle'] = []
+                
+                if aprendiz.document in moto_map:
+                    moto = moto_map[aprendiz.document]
+                    aprendiz_dict['vehicle'].append({
+                        'tipo': 'motocicleta',
+                        'placa': moto.placa,
+                        'marca': moto.marca,
+                        'modelo': moto.modelo,
+                        'color': moto.color,
+                        'observaciones': moto.observaciones,
+                        'foto': moto.foto,
+                        'tarjeta_propiedad': moto.tarjeta_propiedad,
+
+                    })
+                if aprendiz.document in bici_map:
+                    bici = bici_map[aprendiz.document]
+                    aprendiz_dict['vehicle'].append({
+                        'tipo': 'bicicleta',
+                        'marca': bici.marca,
+                        'color': bici.color,
+                        'modelo': bici.modelo,
+                        'numero_marco': bici.numero_marco,
+                        'observaciones': bici.observaciones,
+                        'foto': bici.foto,
+                        'tarjeta_propiedad': bici.tarjeta_propiedad,
+                    })
+                
+                aprendices_result.append(aprendiz_dict)
+            
+            return {
+                "total_items": total_items,
+                "page": page,
+                "per_page": per_page,
+                "items": aprendices_result
+            }
+        except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
         finally:
             db.close()

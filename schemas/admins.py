@@ -7,7 +7,7 @@ class Admins(BaseModel):
     last_name: str = Field(..., description="Apellido del Admin")
     document: int = Field(..., description="Documento del Admin")
     registry_date: Optional[str] = Field(None, description="Fecha de registro del Admin")	
- 
+
 
 
     class Config:
@@ -17,6 +17,11 @@ class Admins(BaseModel):
                 "name": "Jonhathan",
                 "last_name": "Sojo",
                 "document": "123456789",                
-                
+
             }
         }
+
+
+class ChangeStatusRequest(BaseModel):
+    id: int
+    status_id: int
