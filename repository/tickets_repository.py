@@ -1,4 +1,7 @@
 from datetime import datetime
+
+from sqlalchemy import desc
+
 from config.database import Session
 from fastapi import HTTPException
 from models.tickets import Tickets as TicketsModel
@@ -43,44 +46,66 @@ class TicketsRepository:
             raise HTTPException(status_code=500, detail=f"Error updating ticket: {str(e)}")
         finally:
             db.close()
-            
-    def get_tickets(self):
-        db = Session()
+
+    from sqlalchemy import desc
+    from sqlalchemy.orm import Session
+    from fastapi import HTTPException
+    from typing import List, Dict, Any
+
+    # ... (Assuming your models and Session are defined elsewhere)
+
+    # from path.to.your.database import Session
+
+    def get_tickets(self) -> List[Dict[str, Any]]:
+        db: Session = Session()
         try:
-            tickets = db.query(TicketsModel).all()
+            tickets = db.query(TicketsModel). \
+                order_by(desc(TicketsModel.create_date)). \
+                all()
+
+            if not tickets:
+                return []
+
+            unique_documents = {t.document for t in tickets if t.document is not None}
+
+            if not unique_documents:
+                return []
+
+            aprendices = db.query(AprendizModel).filter(AprendizModel.document.in_(unique_documents)).all()
+            admins = db.query(AdminModel).filter(AdminModel.document.in_(unique_documents)).all()
+            vigilantes = db.query(VigilanteModel).filter(VigilanteModel.document.in_(unique_documents)).all()
+
+            aprendiz_dict = {a.document: a for a in aprendices}
+            admin_dict = {a.document: a for a in admins}
+            vigilante_dict = {v.document: v for v in vigilantes}
+
             ticket_data = []
 
             for ticket in tickets:
                 user_info = None
+                document = ticket.document
 
-                # Buscar en AprendizModel
-                aprendiz = db.query(AprendizModel).filter(AprendizModel.document == ticket.document).first()
-                if aprendiz:
+                if document in aprendiz_dict:
+                    aprendiz = aprendiz_dict[document]
                     user_info = {
                         "name": aprendiz.name,
                         "last_name": aprendiz.last_name,
                         "type": "Aprendiz"
                     }
-
-                # Buscar en AdminModel si no se encontró en AprendizModel
-                if not user_info:
-                    admin = db.query(AdminModel).filter(AdminModel.document == ticket.document).first()
-                    if admin:
-                        user_info = {
-                            "name": admin.name,
-                            "last_name": admin.last_name,
-                            "type": "Admin"
-                        }
-
-                # Buscar en VigilanteModel si no se encontró en los anteriores
-                if not user_info:
-                    vigilante = db.query(VigilanteModel).filter(VigilanteModel.document == ticket.document).first()
-                    if vigilante:
-                        user_info = {
-                            "name": vigilante.name,
-                            "last_name": vigilante.last_name,
-                            "type": "Vigilante"
-                        }
+                elif document in admin_dict:
+                    admin = admin_dict[document]
+                    user_info = {
+                        "name": admin.name,
+                        "last_name": admin.last_name,
+                        "type": "Admin"
+                    }
+                elif document in vigilante_dict:
+                    vigilante = vigilante_dict[document]
+                    user_info = {
+                        "name": vigilante.name,
+                        "last_name": vigilante.last_name,
+                        "type": "Vigilante"
+                    }
 
                 if user_info:
                     ticket_info = {
@@ -94,30 +119,39 @@ class TicketsRepository:
                     ticket_data.append(ticket_info)
 
             return ticket_data
+
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error al obtener los tickets: {str(e)}")
         finally:
             db.close()
-            
+
     def get_tickets_by_user(self, doc: int):
-        db = Session()
+        db: Session = Session()
         try:
-            tickets = db.query(TicketsModel).filter(TicketsModel.document == doc)
+            aprendiz = db.query(AprendizModel).filter(AprendizModel.document == doc).first()
+            if not aprendiz:
+                return []
+
+            tickets = db.query(TicketsModel). \
+                filter(TicketsModel.document == doc). \
+                order_by(desc(TicketsModel.create_date)). \
+                all()
             ticket_data = []
             for ticket in tickets:
-                user = db.query(AprendizModel).filter(AprendizModel.document == ticket.document).first()
-                if user:
-                    ticket_info = {
-                        "ticket_id": ticket.id,
-                        "aprendiz_name": user.name + ' ' + user.last_name,
-                        "ticket_description": ticket.description,
-                        "status": ticket.status,
-                        "create_date": ticket.create_date
-                    }
-                    ticket_data.append(ticket_info)
+                ticket_info = {
+                    "ticket_id": ticket.id,
+                    "aprendiz_name": aprendiz.name + ' ' + aprendiz.last_name,
+                    "ticket_description": ticket.description,
+                    "status": ticket.status,
+                    "create_date": ticket.create_date
+                }
+                ticket_data.append(ticket_info)
             return ticket_data
+
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error al obtener los tickets: {str(e)}")
         finally:
             db.close()
             
