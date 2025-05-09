@@ -16,7 +16,8 @@ def get_user_all(request: Request, token: TokenData = Depends(verify_token)):
     aprendices_with_roll = aprendices_service.get_all_aprendices()
     return JSONResponse(status_code=200, content=jsonable_encoder(aprendices_with_roll))   
 
-@limiter.limit("20/minute")
+@limiter.limit("10/day")
+@limiter.limit("5/hour")
 @aprendices_router.post("/api/v1/aprendiz-registration", tags=['Aprendices'])
 async def create_aprendiz(request: Request, aprendices: Aprendices):
     result = aprendices_service.create_aprendiz(aprendices)

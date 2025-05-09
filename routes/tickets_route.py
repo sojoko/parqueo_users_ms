@@ -12,7 +12,8 @@ from services.tickets_service import TicketsService
 tickets_route = APIRouter()
 tickets_service = TicketsService()
 
-@limiter.limit("20/minute")
+@limiter.limit("10/day")
+@limiter.limit("5/hour")
 @tickets_route.post("/api/v1/tickets-registration", tags=['Tickets'])
 async def create_ticket(request:Request, tickets: Tickets, token: TokenData = Depends(verify_token)):
     result = tickets_service.create_ticket(tickets)

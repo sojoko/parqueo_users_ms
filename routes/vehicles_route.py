@@ -10,13 +10,15 @@ from services.vehicles_service import VehiclesService
 vehicle_router = APIRouter()
 vehicles_service = VehiclesService()
 
-@limiter.limit("30/minute")
+@limiter.limit("10/day")
+@limiter.limit("5/hour")
 @vehicle_router.post("/api/v1/motocicleta-registration", tags=['Vehiculos'])
 async def create_moto(request:Request, motocicletas: Motocicletas):
     result = vehicles_service.create_moto(motocicletas)
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
-@limiter.limit("30/minute")
+@limiter.limit("10/day")
+@limiter.limit("5/hour")
 @vehicle_router.post("/api/v1/bicicleta-registration", tags=['Vehiculos'])
 async def create_byci(request:Request, bicicleta: Bicicleta):
     result = vehicles_service.create_byci(bicicleta)

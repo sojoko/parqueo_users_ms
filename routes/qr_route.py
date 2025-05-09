@@ -11,7 +11,8 @@ from services.qr_service import QRService
 qr_router = APIRouter()
 qr_service = QRService()
 
-@limiter.limit("20/minute")
+@limiter.limit("20/day")
+@limiter.limit("10/hour")
 @qr_router.post("/api/v1/qr", tags=['QR'])
 def create_qr(request:Request, qr: QR, document: int, token: TokenData = Depends(verify_token)):
     qr_code = qr_service.create_qr(qr, document)

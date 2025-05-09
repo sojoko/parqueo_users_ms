@@ -12,7 +12,8 @@ from services.parking_service import ParkingService
 parking_router = APIRouter()
 parking_service = ParkingService()
 
-@limiter.limit("30/minute")
+@limiter.limit("20/day")
+@limiter.limit("10/hour")
 @parking_router.post("/api/v1/parking-registration", tags=['parking'])
 async def create_parking(request:Request, parking : Parking, token: TokenData = Depends(verify_token)):
     result = parking_service.create_parking(parking)
@@ -36,7 +37,7 @@ async def get_parking_by_document(request:Request, user_document: int, token: To
     parking = parking_service.get_parking_by_document(user_document)
     return JSONResponse(status_code=200, content=jsonable_encoder(parking))
 
-@limiter.limit("30/minute")
+@limiter.limit("20/minute")
 @parking_router.put("/api/v1/parking-registration-update/{user_document}", tags=['parking'])
 async def update_parking(request:Request, user_document: int, parking: Parking, token: TokenData = Depends(verify_token)):
     result = parking_service.update_parking(user_document, parking)

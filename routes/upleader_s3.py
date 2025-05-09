@@ -14,7 +14,8 @@ dotenv.load_dotenv()
 s3_cliente = boto3.client('s3', aws_access_key_id = str(os.getenv("AWS_ACCESS_KEY")), aws_secret_access_key = str(os.getenv("AWS_SECRET_KEY")))
 upload_to_s3_route = APIRouter()
 
-@limiter.limit("20/minute")
+@limiter.limit("20/day")
+@limiter.limit("10/hour")
 @upload_to_s3_route.post("/api/v1/upload_img_s3", tags=['upload_img_s3'])
 async def upload_img_to_s3(request:Request, image: UploadFile = File(...)):
 

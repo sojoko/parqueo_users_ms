@@ -52,10 +52,6 @@ class TicketsRepository:
     from fastapi import HTTPException
     from typing import List, Dict, Any
 
-    # ... (Assuming your models and Session are defined elsewhere)
-
-    # from path.to.your.database import Session
-
     def get_tickets(self) -> List[Dict[str, Any]]:
         db: Session = Session()
         try:

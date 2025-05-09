@@ -19,7 +19,8 @@ def get_user(request:Request, document: int, token: TokenData = Depends(verify_t
     user = users_service.get_user(document)
     return JSONResponse(status_code=200, content=jsonable_encoder(user))
 
-@limiter.limit("20/minute")
+@limiter.limit("10/day")
+@limiter.limit("5/hour")
 @user_router.delete("/api/v1/users/delete/{document}/{roll}", tags=['Users']) 
 def delete_user(request:Request, document: int, roll: int, token: TokenData = Depends(verify_token)):
     result = users_service.delete_user(document, roll)
@@ -31,7 +32,8 @@ def get_user_all(request:Request):
     users = users_service.get_user_all()
     return JSONResponse(status_code=200, content=jsonable_encoder(users))
 
-@limiter.limit("20/minute")
+@limiter.limit("10/day")
+@limiter.limit("5/hour")
 @user_router.post("/api/v1/login", tags=['Auth'])
 def login(request:Request, users: User):
     result = users_service.login(users)

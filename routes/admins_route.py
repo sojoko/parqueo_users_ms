@@ -11,7 +11,8 @@ admins_router = APIRouter()
 admins_service = AdminsService()
 
 
-@limiter.limit("20/minute")
+@limiter.limit("10/day")
+@limiter.limit("5/hour")
 @admins_router.post("/api/v1/admins-registration", tags=['admins'])
 async def create_admin(request: Request, admins : Admins, token: TokenData = Depends(verify_token)):
     result = admins_service.create_admin(admins)

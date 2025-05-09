@@ -9,7 +9,8 @@ from services.vigilante_service import VigilanteService
 vigilante_router = APIRouter()
 vigilante_service = VigilanteService()
 
-@limiter.limit("20/minute")
+@limiter.limit("10/day")
+@limiter.limit("5/hour")
 @vigilante_router.post("/api/v1/vigilantes-registration", tags=['Vigilantes'])
 async def create_vigilante(request:Request, vigilantes: Vigilantes, token: TokenData = Depends(verify_token)):
     result = vigilante_service.create_vigilante(vigilantes)
