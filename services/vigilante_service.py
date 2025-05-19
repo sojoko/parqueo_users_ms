@@ -1,136 +1,78 @@
 from fastapi import HTTPException
-from config.database import Session
-from models.vigilantes import Vigilantes as VigilanteModel
 from schemas.vigilantes import Vigilantes, ChangeStatusRequest
+from repository.vigilante_repository import VigilanteRepository
 
 class VigilanteService:
+    def __init__(self, repository=None):
+        self.repository = repository or VigilanteRepository()
+
     def create_vigilante(self, vigilantes: Vigilantes):
-        db = Session()
-        try:   
-            vigilantes.document = int(vigilantes.document)
-            existing_vigilante = db.query(VigilanteModel).filter(VigilanteModel.document == vigilantes.document).first()
-            if existing_vigilante:
+        try:
+            success = self.repository.create_vigilante(vigilantes)
+
+            if not success:
                 raise HTTPException(status_code=400, detail="El documento ya está registrado")
-            new_vigilante = VigilanteModel(
-                name=vigilantes.name,
-                last_name=vigilantes.last_name,
-                document=vigilantes.document
-            )
-            db.add(new_vigilante)
-            db.commit()
 
             return {"message": "El usuario vigilante fue registrado correctamente"}
-
-        except ValueError as ve:     
-            raise HTTPException(status_code=400, detail=f"Error de validación: {str(ve)}")    
         except HTTPException as http_exc:
             raise http_exc
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")    
-        finally:
-            db.close()
+            raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
     def update_vigilante(self, document: int, vigilantes: Vigilantes):
-        db = Session()
         try:
-            vigilante = db.query(VigilanteModel).filter(VigilanteModel.document == document).first()
+            result = self.repository.update_vigilante(document, vigilantes)
 
-            if not vigilante:
+            if not result:
                 raise HTTPException(status_code=404, detail="Vigilante no encontrado")
-
-            vigilante.name = vigilantes.name
-            vigilante.last_name = vigilantes.last_name
-            vigilante.document = int(vigilantes.document)
-
-            db.commit()
 
             return {"message": "El usuario vigilante fue actualizado correctamente"}
         except HTTPException as http_exc:
             raise http_exc
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
-        finally:
-            db.close()
 
     def get_vigilante_by_id(self, id: int):
-        db = Session()
         try:
-            vigilante = db.query(VigilanteModel).filter(VigilanteModel.id == id).first()
+            vigilante = self.repository.get_vigilante_by_id(id)
 
             if not vigilante:
                 raise HTTPException(status_code=404, detail="Vigilante no encontrado")
 
-            user_dict = vigilante.__dict__
-            user_dict['role_id'] = 3
-
-            return user_dict
+            return vigilante
         except HTTPException as http_exc:
             raise http_exc
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
-        finally:
-            db.close()
 
     def get_vigilante_by_document(self, document: int):
-        db = Session()
         try:
-            vigilante = db.query(VigilanteModel).filter(VigilanteModel.document == document).first()
+            vigilante = self.repository.get_vigilante_by_document(document)
 
             if not vigilante:
                 raise HTTPException(status_code=404, detail="Vigilante no encontrado")
 
-            user_dict = vigilante.__dict__
-            user_dict['roll'] = "vigilante"
-
-            return user_dict
+            return vigilante
         except HTTPException as http_exc:
             raise http_exc
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
-        finally:
-            db.close()
 
     def get_all_vigilant(self, page: int, per_page: int):
         try:
-            db = Session()
-            try:
-                skip = (page - 1) * per_page
-                vigilants = db.query(VigilanteModel).offset(skip).limit(per_page).all()
-                vigilantes_with_roll = []
-                for vigilante in vigilants:
-                    user_dict = vigilante.__dict__
-                    user_dict['roll'] = "vigilante"
-                    vigilantes_with_roll.append(user_dict)
-                return vigilantes_with_roll
-            finally:
-                db.close()
+            skip = (page - 1) * per_page
+            return self.repository.get_all_vigilant(skip, per_page)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
-    def change_vigilante_status(self, req: ChangeStatusRequest):
+    def change_vigilante_status(self, request: ChangeStatusRequest):
         try:
-            vigilante_id = int(req.id)
-            status_id = int(req.status_id)
+            result = self.repository.change_vigilante_status(request)
 
-            db = Session()
-            try:
-                vigilante = db.query(VigilanteModel).filter(VigilanteModel.id == vigilante_id).first()
+            if not result:
+                raise HTTPException(status_code=404, detail="El vigilante no fue encontrado")
 
-                if not vigilante:
-                    raise HTTPException(status_code=404, detail="El vigilante no fue encontrado")
-
-                vigilante.status = status_id
-                db.commit()
-
-                return {"message": "El estado del vigilante fue actualizado correctamente"}
-            except HTTPException as http_exc:
-                db.rollback()
-                raise http_exc
-            except Exception as e:
-                db.rollback()
-                raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
-            finally:
-                db.close()
+            return {"message": "El estado del vigilante fue actualizado correctamente"}
         except HTTPException as http_exc:
             raise http_exc
         except Exception as e:

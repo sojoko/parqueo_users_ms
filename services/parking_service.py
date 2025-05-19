@@ -4,8 +4,8 @@ from schemas.parking import Parking
 from repository.parking_repository import ParkingRepository
 
 class ParkingService:
-    def __init__(self):
-        self.repository = ParkingRepository()
+    def __init__(self, repository=None):
+        self.repository = repository or ParkingRepository()
     def create_parking(self, parking: Parking):
         try:
             parking.user_document = int(parking.user_document)

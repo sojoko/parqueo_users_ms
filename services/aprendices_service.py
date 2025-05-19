@@ -4,8 +4,8 @@ from schemas.aprendices import Aprendices, ChangeStatusRequest
 from repository.aprendiz_repository import AprendizRepository
 
 class AprendicesService:
-    def __init__(self):
-        self.repository = AprendizRepository()
+    def __init__(self, repository=None):
+        self.repository = repository or AprendizRepository()
 
     def get_all_aprendices(self):
         return self.repository.get_all_aprendices()
@@ -56,6 +56,8 @@ class AprendicesService:
             if aprendiz_by_document is None:
                 raise HTTPException(status_code=404, detail="El documento no fue encontrado")
             return aprendiz_by_document
+        except HTTPException as http_exc:
+            raise http_exc
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
@@ -141,5 +143,7 @@ class AprendicesService:
                 raise HTTPException(status_code=404, detail="Aprendiz no encontrado")
 
             return {"message": "El aprendiz fue actualizado correctamente"}
+        except HTTPException as http_exc:
+            raise http_exc
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")

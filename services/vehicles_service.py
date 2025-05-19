@@ -4,8 +4,8 @@ from schemas.vehicles import Bicicleta
 from repository.vehicle_repository import VehicleRepository
 
 class VehiclesService:
-    def __init__(self):
-        self.repository = VehicleRepository()
+    def __init__(self, repository=None):
+        self.repository = repository or VehicleRepository()
     def create_moto(self, motocicletas: Motocicletas):
         try:            
             motocicletas.user_document = int(motocicletas.user_document)   

@@ -3,8 +3,8 @@ from schemas.admins import Admins, ChangeStatusRequest
 from repository.admin_repository import AdminRepository
 
 class AdminsService:
-    def __init__(self):
-        self.repository = AdminRepository()
+    def __init__(self, repository=None):
+        self.repository = repository or AdminRepository()
 
     def create_admin(self, admins: Admins):
         try:

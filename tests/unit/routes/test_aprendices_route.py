@@ -43,8 +43,8 @@ mock_aprendiz_response = {
 }
 
 mock_change_status_data = {
-    "document": 123456789,
-    "state_id": 2
+    "id": 123456789,
+    "status_id": 2
 }
 
 @pytest.fixture

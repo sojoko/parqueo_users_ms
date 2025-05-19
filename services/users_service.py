@@ -7,8 +7,8 @@ from repository.user_repository import UserRepository
 import bcrypt
 
 class UsersService:
-    def __init__(self):
-        self.repository = UserRepository()
+    def __init__(self, repository=None):
+        self.repository = repository or UserRepository()
     def get_user(self, document: int):
         user = self.repository.get_user_by_document(document)
         if user is None:

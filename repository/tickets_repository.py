@@ -47,9 +47,6 @@ class TicketsRepository:
         finally:
             db.close()
 
-    from sqlalchemy import desc
-    from sqlalchemy.orm import Session
-    from fastapi import HTTPException
     from typing import List, Dict, Any
 
     def get_tickets(self) -> List[Dict[str, Any]]:

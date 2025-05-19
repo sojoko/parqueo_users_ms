@@ -4,8 +4,8 @@ from schemas.tickets import Tickets
 from repository.tickets_repository import TicketsRepository
 
 class TicketsService:
-    def __init__(self):
-        self.repository = TicketsRepository()
+    def __init__(self, repository=None):
+        self.repository = repository or TicketsRepository()
     def create_ticket(self, tickets: Tickets):
         try:       
             tickets.document = int(tickets.document)
@@ -59,7 +59,12 @@ class TicketsService:
 
     def get_tickets_by_user(self, doc: int):
         try:
-            return self.repository.get_tickets_by_user(doc)
+            tickets = self.repository.get_tickets_by_user(doc)
+            if not tickets:
+                raise HTTPException(status_code=404, detail="No se encontraron tickets para este usuario")
+            return tickets
+        except HTTPException as http_exc:
+            raise http_exc
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error en la operación: {str(e)}")
 
